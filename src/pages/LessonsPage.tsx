@@ -14,7 +14,10 @@ import {
   Target,
   Volume2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Award,
+  Zap,
+  Shield
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -31,15 +34,18 @@ const LessonsPage: React.FC = () => {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [userCountry, setUserCountry] = useState<Country | null>(null);
   const [userLanguage, setUserLanguage] = useState<Language | null>(null);
+  const [username, setUsername] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const country = localStorage.getItem('selectedCountry');
     const language = localStorage.getItem('selectedLanguage');
+    const name = localStorage.getItem('username');
     
-    if (country && language) {
+    if (country && language && name) {
       setUserCountry(JSON.parse(country));
       setUserLanguage(JSON.parse(language));
+      setUsername(name);
       
       // Load progress from Supabase
       const loadProgress = async () => {
@@ -58,7 +64,6 @@ const LessonsPage: React.FC = () => {
   // Speech synthesis function
   const speak = (text: string, lang: string) => {
     if ('speechSynthesis' in window) {
-      // Stop any ongoing speech
       speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
@@ -86,17 +91,16 @@ const LessonsPage: React.FC = () => {
   const handleLevelChange = async (newLevel: number) => {
     if (newLevel >= 0 && newLevel < lessonLevels.length) {
       setCurrentLevel(newLevel);
-      // Update progress in Supabase
       await updateProgress(newLevel, currentLang);
     }
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'beginner': return 'from-green-500 to-emerald-500';
+      case 'intermediate': return 'from-yellow-500 to-orange-500';
+      case 'advanced': return 'from-red-500 to-pink-500';
+      default: return 'from-gray-500 to-slate-500';
     }
   };
 
@@ -130,28 +134,40 @@ const LessonsPage: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
         onClick={() => setSelectedLesson(null)}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">{lesson.title}</h2>
-              <Button variant="ghost" onClick={() => setSelectedLesson(null)}>
+          <div className="p-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{lesson.title}</h2>
+                  <p className="text-slate-300">Interactive Learning Experience</p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                onClick={() => setSelectedLesson(null)}
+                className="text-white hover:bg-white/10 text-2xl w-12 h-12 rounded-xl"
+              >
                 ×
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Animation Section */}
-              <div className="space-y-4">
-                <div className="aspect-square bg-gradient-to-br from-blue-50 to-green-50 rounded-lg flex items-center justify-center">
+              <div className="space-y-6">
+                <div className="aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center overflow-hidden">
                   <Lottie 
                     animationData={getAnimationForLevel(currentLevel)} 
                     loop 
@@ -160,18 +176,21 @@ const LessonsPage: React.FC = () => {
                 </div>
                 
                 {/* Voiceover Controls */}
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
                     onClick={() => speak(lessonLevels[currentLevel]?.content || '', currentLang)}
                     disabled={isPlaying}
-                    className="flex-1"
-                    variant={isPlaying ? "secondary" : "default"}
+                    className={`flex-1 ${isPlaying ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'} transition-all duration-300`}
                   >
                     <Volume2 className="w-4 h-4 mr-2" />
-                    {getTranslation(currentLang, 'ui', 'listenVoiceover', '🔊 Listen to Voiceover')}
+                    {isPlaying ? 'Playing...' : getTranslation(currentLang, 'ui', 'listenVoiceover', '🔊 Listen to Voiceover')}
                   </Button>
                   {isPlaying && (
-                    <Button onClick={stopSpeech} variant="outline">
+                    <Button 
+                      onClick={stopSpeech} 
+                      variant="outline" 
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    >
                       Stop
                     </Button>
                   )}
@@ -179,38 +198,47 @@ const LessonsPage: React.FC = () => {
               </div>
               
               {/* Content Section */}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
+              <div className="space-y-6">
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-blue-400" />
                     {getTranslation(currentLang, 'ui', 'lessonProgress', 'Lesson Progress')}
                   </h3>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-slate-300">
                       Level {currentLevel + 1} of {lessonLevels.length}
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm font-semibold text-white">
                       {Math.round(((currentLevel + 1) / lessonLevels.length) * 100)}%
                     </span>
                   </div>
-                  <Progress value={((currentLevel + 1) / lessonLevels.length) * 100} className="mb-4" />
+                  <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden mb-4">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((currentLevel + 1) / lessonLevels.length) * 100}%` }}
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                      transition={{ duration: 1 }}
+                    />
+                  </div>
                 </div>
                 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-2">
+                <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-yellow-400" />
                     {lessonLevels[currentLevel]?.title}
                   </h4>
-                  <p className="text-blue-800 leading-relaxed">
+                  <p className="text-slate-200 leading-relaxed">
                     {lessonLevels[currentLevel]?.content}
                   </p>
                 </div>
                 
                 {/* Navigation Controls */}
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
                     onClick={() => handleLevelChange(currentLevel - 1)}
                     disabled={currentLevel === 0}
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
                   >
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     {getTranslation(currentLang, 'ui', 'previousLesson', '⬅️ Previous')}
@@ -219,7 +247,7 @@ const LessonsPage: React.FC = () => {
                     onClick={() => handleLevelChange(currentLevel + 1)}
                     disabled={currentLevel === lessonLevels.length - 1}
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
                   >
                     {getTranslation(currentLang, 'ui', 'nextLesson', '➡️ Next')}
                     <ChevronRight className="w-4 h-4 ml-2" />
@@ -228,15 +256,19 @@ const LessonsPage: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button 
                 onClick={() => handleLessonComplete(lesson.id)}
-                className="flex-1"
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all duration-300"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Mark as Complete
               </Button>
-              <Button variant="outline" onClick={() => setSelectedLesson(null)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedLesson(null)}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
                 Close
               </Button>
             </div>
@@ -246,12 +278,20 @@ const LessonsPage: React.FC = () => {
     );
   };
 
-  if (!userCountry || !userLanguage) {
-    return <div>Loading...</div>;
+  if (!userCountry || !userLanguage || !username) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -259,27 +299,39 @@ const LessonsPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
+          <div className="flex items-center gap-4 mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/dashboard')}
+              className="text-white hover:bg-white/10 flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
               {getTranslation(currentLang, 'ui', 'backToDashboard', 'Back to Dashboard')}
             </Button>
           </div>
           
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {getTranslation(currentLang, 'ui', 'interactiveLessons', 'Interactive Lessons')} {userCountry.flag}
-              </h1>
-              <p className="text-gray-600">
-                Learn road safety through engaging animated content in {userLanguage.nativeName}
-              </p>
+            <div className="flex items-center gap-4">
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl"
+              >
+                <BookOpen className="w-8 h-8 text-white" />
+              </motion.div>
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-1">
+                  {getTranslation(currentLang, 'ui', 'interactiveLessons', 'Interactive Lessons')} {userCountry.flag}
+                </h1>
+                <p className="text-slate-300">
+                  Learn road safety through engaging animated content in {userLanguage.nativeName}
+                </p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="text-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
+              <div className="text-2xl font-bold text-white">
                 {completedLessons.length}/{sampleLessons.length}
               </div>
-              <div className="text-sm text-gray-500">Completed</div>
+              <div className="text-sm text-slate-300">Completed</div>
             </div>
           </div>
         </motion.div>
@@ -291,77 +343,85 @@ const LessonsPage: React.FC = () => {
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <Card>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Current Lesson</h3>
-                    <Badge variant="secondary">Level {currentLevel + 1}</Badge>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2">
-                      {lessonLevels[currentLevel]?.title}
-                    </h4>
-                    <p className="text-blue-800 text-sm leading-relaxed">
-                      {lessonLevels[currentLevel]?.content}
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => speak(lessonLevels[currentLevel]?.content || '', currentLang)}
-                      disabled={isPlaying}
-                      variant={isPlaying ? "secondary" : "default"}
-                      size="sm"
-                    >
-                      <Volume2 className="w-4 h-4 mr-2" />
-                      {getTranslation(currentLang, 'ui', 'listenVoiceover', '🔊 Listen')}
-                    </Button>
-                    {isPlaying && (
-                      <Button onClick={stopSpeech} variant="outline" size="sm">
-                        Stop
-                      </Button>
-                    )}
-                  </div>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <Star className="w-6 h-6 text-yellow-400" />
+                    Current Lesson
+                  </h3>
+                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
+                    Level {currentLevel + 1}
+                  </Badge>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center">
-                    <Lottie 
-                      animationData={getAnimationForLevel(currentLevel)} 
-                      loop 
-                      className="w-full h-full max-w-xs max-h-xs"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleLevelChange(currentLevel - 1)}
-                      disabled={currentLevel === 0}
-                      variant="outline"
+                <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+                  <h4 className="font-semibold text-white mb-3">
+                    {lessonLevels[currentLevel]?.title}
+                  </h4>
+                  <p className="text-slate-200 text-sm leading-relaxed">
+                    {lessonLevels[currentLevel]?.content}
+                  </p>
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => speak(lessonLevels[currentLevel]?.content || '', currentLang)}
+                    disabled={isPlaying}
+                    className={`${isPlaying ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'} transition-all duration-300`}
+                    size="sm"
+                  >
+                    <Volume2 className="w-4 h-4 mr-2" />
+                    {isPlaying ? 'Playing...' : getTranslation(currentLang, 'ui', 'listenVoiceover', '🔊 Listen')}
+                  </Button>
+                  {isPlaying && (
+                    <Button 
+                      onClick={stopSpeech} 
+                      variant="outline" 
                       size="sm"
-                      className="flex-1"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                     >
-                      <ChevronLeft className="w-4 h-4 mr-2" />
-                      {getTranslation(currentLang, 'ui', 'previousLesson', 'Previous')}
+                      Stop
                     </Button>
-                    <Button
-                      onClick={() => handleLevelChange(currentLevel + 1)}
-                      disabled={currentLevel === lessonLevels.length - 1}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      {getTranslation(currentLang, 'ui', 'nextLesson', 'Next')}
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              
+              <div className="space-y-6">
+                <div className="aspect-square bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center overflow-hidden">
+                  <Lottie 
+                    animationData={getAnimationForLevel(currentLevel)} 
+                    loop 
+                    className="w-full h-full max-w-xs max-h-xs"
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => handleLevelChange(currentLevel - 1)}
+                    disabled={currentLevel === 0}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    {getTranslation(currentLang, 'ui', 'previousLesson', 'Previous')}
+                  </Button>
+                  <Button
+                    onClick={() => handleLevelChange(currentLevel + 1)}
+                    disabled={currentLevel === lessonLevels.length - 1}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
+                  >
+                    {getTranslation(currentLang, 'ui', 'nextLesson', 'Next')}
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Progress Overview */}
@@ -371,31 +431,39 @@ const LessonsPage: React.FC = () => {
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Your Progress</h3>
-                <span className="text-sm text-gray-500">
-                  {Math.round(((currentLevel + 1) / lessonLevels.length) * 100)}% Complete
-                </span>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Award className="w-5 h-5 text-yellow-400" />
+                Your Progress
+              </h3>
+              <span className="text-sm text-slate-300">
+                {Math.round(((currentLevel + 1) / lessonLevels.length) * 100)}% Complete
+              </span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden mb-4">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentLevel + 1) / lessonLevels.length) * 100}%` }}
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                transition={{ duration: 1, delay: 0.3 }}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-2 text-slate-200">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm">{currentLevel + 1} Levels Completed</span>
               </div>
-              <Progress value={((currentLevel + 1) / lessonLevels.length) * 100} className="mb-4" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-sm">{currentLevel + 1} Levels Completed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-blue-500" />
-                  <span className="text-sm">{lessonLevels.length - currentLevel - 1} Remaining</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  <span className="text-sm">Learning in {userLanguage.nativeName}</span>
-                </div>
+              <div className="flex items-center gap-2 text-slate-200">
+                <Target className="w-5 h-5 text-blue-400" />
+                <span className="text-sm">{lessonLevels.length - currentLevel - 1} Remaining</span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-2 text-slate-200">
+                <Star className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm">Learning in {userLanguage.nativeName}</span>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Lessons Grid */}
@@ -410,67 +478,70 @@ const LessonsPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
+                whileHover={isUnlocked ? { scale: 1.05, y: -5 } : {}}
+                className={`transition-all duration-300 ${
+                  isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
+                }`}
+                onClick={() => isUnlocked && setSelectedLesson(lesson.id)}
               >
-                <Card 
-                  className={`h-full transition-all duration-300 ${
-                    isUnlocked 
-                      ? 'hover:shadow-lg cursor-pointer hover:scale-105' 
-                      : 'opacity-60 cursor-not-allowed'
-                  } ${isCompleted ? 'ring-2 ring-green-500' : ''}`}
-                  onClick={() => isUnlocked && setSelectedLesson(lesson.id)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge className={getDifficultyColor(lesson.difficulty)}>
-                        {lesson.difficulty}
-                      </Badge>
-                      {isCompleted ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : !isUnlocked ? (
-                        <Lock className="w-5 h-5 text-gray-400" />
-                      ) : null}
-                    </div>
-                    <CardTitle className="text-lg">{lesson.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {lesson.description}
-                    </CardDescription>
-                  </CardHeader>
+                <div className={`bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl h-full transition-all duration-300 ${
+                  isUnlocked ? 'hover:shadow-3xl hover:bg-white/15' : 'opacity-60'
+                } ${isCompleted ? 'ring-2 ring-green-500/50' : ''}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge className={`bg-gradient-to-r ${getDifficultyColor(lesson.difficulty)} text-white border-0`}>
+                      {lesson.difficulty}
+                    </Badge>
+                    {isCompleted ? (
+                      <CheckCircle className="w-6 h-6 text-green-400" />
+                    ) : !isUnlocked ? (
+                      <Lock className="w-6 h-6 text-slate-400" />
+                    ) : null}
+                  </div>
                   
-                  <CardContent>
-                    <div className="aspect-video bg-gradient-to-br from-blue-50 to-green-50 rounded-lg flex items-center justify-center mb-4">
-                      <div className="text-center">
-                        {isUnlocked ? (
-                          <Play className="w-8 h-8 text-blue-600 mx-auto mb-1" />
-                        ) : (
-                          <Lock className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                        )}
-                        <p className="text-xs text-gray-500">
-                          {isUnlocked ? 'Click to start' : 'Complete previous lesson'}
-                        </p>
-                      </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{lesson.title}</h3>
+                  <p className="text-slate-300 text-sm mb-4 line-clamp-2">
+                    {lesson.description}
+                  </p>
+                  
+                  <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center mb-4 overflow-hidden">
+                    <div className="text-center">
+                      {isUnlocked ? (
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          className="flex flex-col items-center"
+                        >
+                          <Play className="w-8 h-8 text-blue-400 mb-2" />
+                          <p className="text-xs text-slate-400">Click to start</p>
+                        </motion.div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Lock className="w-8 h-8 text-slate-400 mb-2" />
+                          <p className="text-xs text-slate-400">Complete previous lesson</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <Clock className="w-4 h-4" />
+                      {lesson.duration}
                     </div>
                     
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        {lesson.duration}
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {lesson.topics.slice(0, 2).map((topic, topicIndex) => (
-                          <Badge key={topicIndex} variant="outline" className="text-xs">
-                            {topic}
-                          </Badge>
-                        ))}
-                        {lesson.topics.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{lesson.topics.length - 2} more
-                          </Badge>
-                        )}
-                      </div>
+                    <div className="flex flex-wrap gap-1">
+                      {lesson.topics.slice(0, 2).map((topic, topicIndex) => (
+                        <Badge key={topicIndex} variant="outline" className="text-xs bg-white/5 border-white/20 text-slate-300">
+                          {topic}
+                        </Badge>
+                      ))}
+                      {lesson.topics.length > 2 && (
+                        <Badge variant="outline" className="text-xs bg-white/5 border-white/20 text-slate-300">
+                          +{lesson.topics.length - 2} more
+                        </Badge>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             );
           })}
