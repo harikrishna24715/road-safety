@@ -15,6 +15,7 @@ const LoginPage: React.FC = () => {
   const [showLanguages, setShowLanguages] = useState(false);
   const [error, setError] = useState('');
   const [shakeButton, setShakeButton] = useState(false);
+  const [dodgeButton, setDodgeButton] = useState(false);
 
   // Default to English for initial UI
   const currentLang = selectedLanguage?.code || 'en';
@@ -48,12 +49,19 @@ const LoginPage: React.FC = () => {
     localStorage.setItem('username', username.trim());
     localStorage.setItem('selectedCountry', JSON.stringify(selectedCountry));
     localStorage.setItem('selectedLanguage', JSON.stringify(selectedLanguage));
-    navigate('/dashboard');
+    navigate('/lessons');
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(e.target.value);
     if (error) setError('');
+  };
+
+  const handleButtonHover = () => {
+    if (!username.trim() || !selectedCountry || !selectedLanguage) {
+      setDodgeButton(true);
+      setTimeout(() => setDodgeButton(false), 300);
+    }
   };
 
   return (
@@ -98,7 +106,7 @@ const LoginPage: React.FC = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl">
+          <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl">
             <CardHeader className="text-center pb-6">
               <CardTitle className="flex items-center justify-center gap-3 text-white text-2xl">
                 <Globe className="w-6 h-6 text-blue-400" />
@@ -251,12 +259,16 @@ const LoginPage: React.FC = () => {
                 animate={shakeButton ? {
                   x: [-10, 10, -10, 10, 0],
                   transition: { duration: 0.6 }
+                } : dodgeButton ? {
+                  x: [0, 20, -20, 0],
+                  transition: { duration: 0.3 }
                 } : {}}
               >
                 <Button
                   onClick={handleLogin}
+                  onMouseEnter={handleButtonHover}
                   disabled={!username.trim() || !selectedCountry || !selectedLanguage}
-                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100"
+                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
                   size="lg"
                 >
                   <motion.span

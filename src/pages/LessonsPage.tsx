@@ -61,15 +61,30 @@ const LessonsPage: React.FC = () => {
   const currentLang = userLanguage?.code || 'en';
   const lessonLevels = translations.lessonLevels[currentLang] || translations.lessonLevels.en;
 
-  // Speech synthesis function
+  // Enhanced speech synthesis function with better voice selection
   const speak = (text: string, lang: string) => {
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = languageMap[lang] || 'en-US';
+      
+      // Get available voices and find the best match for the language
+      const voices = speechSynthesis.getVoices();
+      const targetLang = languageMap[lang] || 'en-US';
+      
+      // Find voice that matches the language
+      const voice = voices.find(v => v.lang === targetLang) || 
+                   voices.find(v => v.lang.startsWith(lang)) ||
+                   voices.find(v => v.lang.startsWith('en'));
+      
+      if (voice) {
+        utterance.voice = voice;
+      }
+      
+      utterance.lang = targetLang;
       utterance.rate = 0.9;
       utterance.pitch = 1;
+      utterance.volume = 1;
       
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
