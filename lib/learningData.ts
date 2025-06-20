@@ -6,7 +6,7 @@ export const learningModules: Record<string, LearningModule[]> = {
       id: 'traffic-signals',
       title: 'Traffic Signals and Signs',
       description: 'Learn about traffic lights, road signs, and their meanings',
-      imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=800',
+      imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=800',
       isCompleted: false,
       progress: 0,
       steps: [
@@ -15,8 +15,8 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'lesson',
           title: 'Understanding Traffic Signals',
           description: 'Learn the meaning of red, yellow, and green lights',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'Traffic signals are essential for road safety. Red means STOP - you must come to a complete stop. Yellow means CAUTION - prepare to stop if safe to do so. Green means GO - proceed when safe. Always look both ways even on green light. Traffic lights control the flow of vehicles and pedestrians at intersections, preventing accidents and ensuring orderly movement.',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
+          content: 'Traffic signals are essential for road safety. RED means STOP - you must come to a complete stop and wait. YELLOW means CAUTION - prepare to stop if safe to do so, do not speed up. GREEN means GO - proceed when safe, but always look both ways. Traffic lights control the flow of vehicles and pedestrians at intersections, preventing accidents and ensuring orderly movement. Always obey traffic signals and never run red lights.',
           difficulty: 'easy',
           estimatedTime: '5 minutes',
           isCompleted: false,
@@ -39,7 +39,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'game',
           title: 'Traffic Light Simulator',
           description: 'Practice responding to traffic signals in real-time',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
           difficulty: 'easy',
           estimatedTime: '7 minutes',
           isCompleted: false,
@@ -52,7 +52,7 @@ export const learningModules: Record<string, LearningModule[]> = {
       id: 'pedestrian-safety',
       title: 'Pedestrian Safety',
       description: 'Essential safety rules for walking near traffic',
-      imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=800',
+      imageUrl: 'https://images.pexels.com/photos/544966/pexels-photo-544966.jpeg?auto=compress&cs=tinysrgb&w=800',
       isCompleted: false,
       progress: 0,
       steps: [
@@ -61,8 +61,8 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'lesson',
           title: 'Safe Walking Rules',
           description: 'Learn how to walk safely near roads and traffic',
-          imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'Pedestrian safety is crucial for everyone who walks near roads. Always use sidewalks when available. Look both ways before crossing any street. Use designated crosswalks and obey pedestrian signals. Make eye contact with drivers to ensure they see you. Stay visible with bright clothing, especially at night. Never assume drivers see you - always be alert and defensive.',
+          imageUrl: 'https://images.pexels.com/photos/544966/pexels-photo-544966.jpeg?auto=compress&cs=tinysrgb&w=600',
+          content: 'Pedestrian safety is crucial for everyone who walks near roads. Always use sidewalks when available. Look both ways before crossing any street - left, right, then left again. Use designated crosswalks and zebra crossings. Obey pedestrian signals and wait for the walk signal. Make eye contact with drivers to ensure they see you. Stay visible with bright clothing, especially at night. Never assume drivers see you - always be alert and defensive. Avoid distractions like phones while crossing.',
           difficulty: 'easy',
           estimatedTime: '6 minutes',
           isCompleted: false,
@@ -74,7 +74,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'puzzle',
           title: 'Crosswalk Challenge',
           description: 'Identify safe and unsafe crossing behaviors',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
           difficulty: 'medium',
           estimatedTime: '4 minutes',
           isCompleted: false,
@@ -86,7 +86,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'game',
           title: 'Street Crossing Game',
           description: 'Navigate busy streets safely in this interactive game',
-          imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=600',
+          imageUrl: 'https://images.pexels.com/photos/544966/pexels-photo-544966.jpeg?auto=compress&cs=tinysrgb&w=600',
           difficulty: 'medium',
           estimatedTime: '8 minutes',
           isCompleted: false,
@@ -101,7 +101,7 @@ export const learningModules: Record<string, LearningModule[]> = {
       id: 'traffic-signals',
       title: 'यातायात संकेत और चिह्न',
       description: 'ट्रैफिक लाइट, सड़क के संकेत और उनके अर्थ के बारे में जानें',
-      imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=800',
+      imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=800',
       isCompleted: false,
       progress: 0,
       steps: [
@@ -110,8 +110,8 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'lesson',
           title: 'यातायात संकेतों को समझना',
           description: 'लाल, पीली और हरी बत्ती का अर्थ जानें',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'यातायात संकेत सड़क सुरक्षा के लिए आवश्यक हैं। लाल का मतलब रुकना - आपको पूरी तरह रुकना होगा। पीला का मतलब सावधानी - यदि सुरक्षित हो तो रुकने की तैयारी करें। हरा का मतलब जाना - सुरक्षित होने पर आगे बढ़ें। हरी बत्ती पर भी हमेशा दोनों तरफ देखें। ट्रैफिक लाइट चौराहों पर वाहनों और पैदल चलने वालों के प्रवाह को नियंत्रित करती है।',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
+          content: 'यातायात संकेत सड़क सुरक्षा के लिए आवश्यक हैं। लाल का मतलब रुकना - आपको पूरी तरह रुकना होगा और इंतज़ार करना होगा। पीला का मतलब सावधानी - यदि सुरक्षित हो तो रुकने की तैयारी करें, तेज़ी न करें। हरा का मतलब जाना - सुरक्षित होने पर आगे बढ़ें, लेकिन हमेशा दोनों तरफ देखें। ट्रैफिक लाइट चौराहों पर वाहनों और पैदल चलने वालों के प्रवाह को नियंत्रित करती है।',
           difficulty: 'easy',
           estimatedTime: '5 मिनट',
           isCompleted: false,
@@ -134,7 +134,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'game',
           title: 'ट्रैफिक लाइट सिमुलेटर',
           description: 'वास्तविक समय में ट्रैफिक सिग्नल का जवाब देने का अभ्यास करें',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
           difficulty: 'easy',
           estimatedTime: '7 मिनट',
           isCompleted: false,
@@ -149,7 +149,7 @@ export const learningModules: Record<string, LearningModule[]> = {
       id: 'traffic-signals',
       title: 'ట్రాఫిక్ సిగ్నల్స్ మరియు సంకేతాలు',
       description: 'ట్రాఫిక్ లైట్లు, రోడ్డు సంకేతాలు మరియు వాటి అర్థాలను తెలుసుకోండి',
-      imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=800',
+      imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=800',
       isCompleted: false,
       progress: 0,
       steps: [
@@ -158,8 +158,8 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'lesson',
           title: 'ట్రాఫిక్ సిగ్నల్స్ అర్థం చేసుకోవడం',
           description: 'ఎరుపు, పసుపు మరియు ఆకుపచ్చ లైట్ల అర్థం తెలుసుకోండి',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'ట్రాఫిక్ సిగ్నల్స్ రోడ్డు భద్రతకు అవసరం. ఎరుపు అంటే ఆగు - మీరు పూర్తిగా ఆగాలి. పసుపు అంటే జాగ్రత్త - సురక్షితంగా ఉంటే ఆగడానికి సిద్ధం అవ్వండి. ఆకుపచ్చ అంటే వెళ్లు - సురక్షితంగా ఉన్నప్పుడు ముందుకు వెళ్లండి. ఆకుపచ్చ లైట్ వద్ద కూడా ఎల్లప్పుడూ రెండు వైపులా చూడండి। ట్రాఫిక్ లైట్లు కూడళ్లలో వాహనాలు మరియు పాదచారుల ప్రవాహాన్ని నియంత్రిస్తాయి।',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
+          content: 'ట్రాఫిక్ సిగ్నల్స్ రోడ్డు భద్రతకు అవసరం। ఎరుపు అంటే ఆగు - మీరు పూర్తిగా ఆగాలి మరియు వేచి ఉండాలి। పసుపు అంటే జాగ్రత్త - సురక్షితంగా ఉంటే ఆగడానికి సిద్ధం అవ్వండి, వేగం పెంచవద్దు। ఆకుపచ్చ అంటే వెళ్లు - సురక్షితంగా ఉన్నప్పుడు ముందుకు వెళ్లండి, కానీ ఎల్లప్పుడూ రెండు వైపులా చూడండి। ట్రాఫిక్ లైట్లు కూడళ్లలో వాహనాలు మరియు పాదచారుల ప్రవాహాన్ని నియంత్రిస్తాయి।',
           difficulty: 'easy',
           estimatedTime: '5 నిమిషాలు',
           isCompleted: false,
@@ -182,7 +182,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           type: 'game',
           title: 'ట్రాఫిక్ లైట్ సిమ్యులేటర్',
           description: 'రియల్ టైమ్‌లో ట్రాఫిక్ సిగ్నల్‌లకు ప్రతిస్పందించడం అభ్యసించండి',
-          imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+          imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
           difficulty: 'easy',
           estimatedTime: '7 నిమిషాలు',
           isCompleted: false,
@@ -203,8 +203,8 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['Go slowly', 'Stop completely', 'Speed up', 'Turn left only'],
         correctAnswer: 1,
-        explanation: 'Red light means you must come to a complete stop and wait for the green light.',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        explanation: 'Red light means you must come to a complete stop and wait for the green light. Never run a red light as it can cause serious accidents.',
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       },
       {
         id: 'q2',
@@ -212,8 +212,8 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['Red light', 'Yellow light', 'Green light', 'No light'],
         correctAnswer: 2,
-        explanation: 'Green light means it is safe to proceed, but always check for other vehicles and pedestrians.',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        explanation: 'Green light means it is safe to proceed, but always check for other vehicles and pedestrians before moving.',
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       },
       {
         id: 'q3',
@@ -221,8 +221,8 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['Speed up to get through', 'Stop immediately', 'Prepare to stop if safe', 'Turn around'],
         correctAnswer: 2,
-        explanation: 'Yellow light means caution - prepare to stop if it is safe to do so.',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        explanation: 'Yellow light means caution - prepare to stop if it is safe to do so. Do not speed up to beat the light.',
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ],
     'puzzle-pedestrian-safety': [
@@ -233,7 +233,7 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         options: ['Anywhere convenient', 'At crosswalks', 'Between parked cars', 'In the middle of the block'],
         correctAnswer: 1,
         explanation: 'Always use designated crosswalks for safety. They are marked and visible to drivers.',
-        imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=400'
+        imageUrl: 'https://images.pexels.com/photos/544966/pexels-photo-544966.jpeg?auto=compress&cs=tinysrgb&w=400'
       },
       {
         id: 'q2',
@@ -242,7 +242,7 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         options: ['Look left only', 'Look right only', 'Look both ways', 'Just listen for cars'],
         correctAnswer: 2,
         explanation: 'Always look both ways before crossing to check for vehicles coming from either direction.',
-        imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=400'
+        imageUrl: 'https://images.pexels.com/photos/544966/pexels-photo-544966.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ]
   },
@@ -254,8 +254,8 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['धीरे जाएं', 'पूरी तरह रुकें', 'तेज़ी से जाएं', 'केवल बाएं मुड़ें'],
         correctAnswer: 1,
-        explanation: 'लाल बत्ती का मतलब है कि आपको पूरी तरह रुकना होगा और हरी बत्ती का इंतज़ार करना होगा।',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        explanation: 'लाल बत्ती का मतलब है कि आपको पूरी तरह रुकना होगा और हरी बत्ती का इंतज़ार करना होगा। कभी भी लाल बत्ती न तोड़ें।',
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       },
       {
         id: 'q2',
@@ -264,7 +264,7 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         options: ['लाल बत्ती', 'पीली बत्ती', 'हरी बत्ती', 'कोई बत्ती नहीं'],
         correctAnswer: 2,
         explanation: 'हरी बत्ती का मतलब है कि आगे बढ़ना सुरक्षित है, लेकिन हमेशा अन्य वाहनों की जांच करें।',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ]
   },
@@ -276,8 +276,8 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['నెమ్మదిగా వెళ్లండి', 'పూర్తిగా ఆగండి', 'వేగంగా వెళ్లండి', 'ఎడమవైపు మాత్రమే తిరుగు'],
         correctAnswer: 1,
-        explanation: 'ఎరుపు లైట్ అంటే మీరు పూర్తిగా ఆగి ఆకుపచ్చ లైట్ కోసం వేచి ఉండాలి.',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        explanation: 'ఎరుపు లైట్ అంటే మీరు పూర్తిగా ఆగి ఆకుపచ్చ లైట్ కోసం వేచి ఉండాలి। ఎప్పుడూ ఎరుపు లైట్ ను ఉల్లంఘించవద్దు.',
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       },
       {
         id: 'q2',
@@ -286,7 +286,7 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         options: ['ఎరుపు లైట్', 'పసుపు లైట్', 'ఆకుపచ్చ లైట్', 'లైట్ లేకపోతే'],
         correctAnswer: 2,
         explanation: 'ఆకుపచ్చ లైట్ అంటే ముందుకు వెళ్లడం సురక్షితం, కానీ ఎల్లప్పుడూ ఇతర వాహనాలను తనిఖీ చేయండి.',
-        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+        imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ]
   }
@@ -299,7 +299,7 @@ export const gameScenarios: Record<string, Record<string, GameScenario>> = {
       title: 'Traffic Light Simulator',
       description: 'Practice responding to traffic signals in different scenarios',
       type: 'traffic-light',
-      imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+      imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
       instructions: [
         'Watch the traffic light carefully',
         'Click STOP when light is red',
@@ -317,7 +317,7 @@ export const gameScenarios: Record<string, Record<string, GameScenario>> = {
       title: 'Safe Crossing Game',
       description: 'Help pedestrians cross the street safely',
       type: 'crossing',
-      imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=600',
+      imageUrl: 'https://images.pexels.com/photos/544966/pexels-photo-544966.jpeg?auto=compress&cs=tinysrgb&w=600',
       instructions: [
         'Guide pedestrians to crosswalks',
         'Wait for safe crossing signals',
@@ -337,7 +337,7 @@ export const gameScenarios: Record<string, Record<string, GameScenario>> = {
       title: 'ट्रैफिक लाइट सिमुलेटर',
       description: 'विभिन्न परिस्थितियों में ट्रैफिक सिग्नल का जवाब देने का अभ्यास करें',
       type: 'traffic-light',
-      imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+      imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
       instructions: [
         'ट्रैफिक लाइट को ध्यान से देखें',
         'लाल बत्ती पर STOP दबाएं',
@@ -357,7 +357,7 @@ export const gameScenarios: Record<string, Record<string, GameScenario>> = {
       title: 'ట్రాఫిక్ లైట్ సిమ్యులేటర్',
       description: 'వివిధ పరిస్థితులలో ట్రాఫిక్ సిగ్నల్‌లకు ప్రతిస్పందించడం అభ్యసించండి',
       type: 'traffic-light',
-      imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
+      imageUrl: 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
       instructions: [
         'ట్రాఫిక్ లైట్‌ను జాగ్రత్తగా చూడండి',
         'ఎరుపు లైట్‌లో STOP నొక్కండి',
