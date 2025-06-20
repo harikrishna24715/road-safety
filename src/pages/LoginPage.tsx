@@ -189,19 +189,6 @@ const LoginPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Welcome Message for New Users */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="p-4 bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl text-center backdrop-blur-sm"
-              >
-                <div className="text-green-300 font-semibold mb-2">🎯 Fresh Start Guaranteed!</div>
-                <div className="text-sm text-slate-300">
-                  Every login begins your learning journey from the very beginning
-                </div>
-              </motion.div>
-
               {/* Username Input */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
