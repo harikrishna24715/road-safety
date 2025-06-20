@@ -345,7 +345,7 @@ const LoginPage: React.FC = () => {
           <p className="text-slate-400 text-sm">
             🌟 Your progress is saved and will continue where you left off 🌟
           </p>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );
