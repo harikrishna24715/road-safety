@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Award,
   Sparkles,
-  Gift
+  Gift,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -36,6 +37,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedStep, setCompletedStep] = useState<LearningStep | null>(null);
+  const [showNextLessonPrompt, setShowNextLessonPrompt] = useState(false);
 
   useEffect(() => {
     const moduleData = learningModules[language] || learningModules.en;
@@ -127,6 +129,14 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
     });
     
     setModules(updatedModules);
+    
+    // Check if module is complete and show next lesson prompt
+    const currentModuleUpdated = updatedModules.find(m => m.id === currentModule!.id);
+    if (currentModuleUpdated?.isCompleted) {
+      setTimeout(() => {
+        setShowNextLessonPrompt(true);
+      }, 3000);
+    }
   };
 
   const getStepIcon = (type: string) => {
@@ -145,6 +155,78 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
       case 'game': return 'from-green-500 to-emerald-500';
       default: return 'from-gray-500 to-slate-500';
     }
+  };
+
+  const NextLessonPrompt = () => {
+    const nextModule = modules.find(module => !module.isCompleted && module.id !== currentModule?.id);
+    
+    if (!nextModule) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-6 shadow-2xl"
+          >
+            <Trophy className="w-10 h-10 text-white" />
+          </motion.div>
+          
+          <h2 className="text-2xl font-bold text-white mb-3">
+            Module Complete! 🎉
+          </h2>
+          <p className="text-slate-300 mb-6">
+            Great job! You've completed all steps in this module. Ready to start the next lesson?
+          </p>
+          
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-2 p-3 bg-green-500/20 rounded-xl">
+              <Award className="w-5 h-5 text-green-400" />
+              <span className="text-green-300">Module Completed!</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-blue-500/20 rounded-xl">
+              <ArrowRight className="w-5 h-5 text-blue-400" />
+              <span className="text-blue-300">Next: {nextModule.title}</span>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => setShowNextLessonPrompt(false)}
+              variant="outline"
+              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              Continue Later
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowNextLessonPrompt(false);
+                const firstStep = nextModule.steps.find(step => step.isUnlocked);
+                if (firstStep) {
+                  setSelectedStep(firstStep);
+                  setCurrentModule(nextModule);
+                }
+              }}
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            >
+              Start Next Lesson
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
   };
 
   const CompletionModal = () => {
@@ -466,17 +548,19 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
       <AnimatePresence>
         {selectedStep && <StepModal step={selectedStep} />}
         {showCompletionModal && <CompletionModal />}
+        {showNextLessonPrompt && <NextLessonPrompt />}
       </AnimatePresence>
     </div>
   );
 };
 
-// Puzzle Component
+// Enhanced Puzzle Component with blinking transitions
 const PuzzleComponent: React.FC<{ stepId: string; language: string; onComplete: () => void }> = ({ stepId, language, onComplete }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
+  const [isBlinking, setIsBlinking] = useState(false);
   
   const questions = puzzleQuestions[language]?.[stepId] || puzzleQuestions.en?.[stepId] || [];
   const question = questions[currentQuestion];
@@ -503,9 +587,14 @@ const PuzzleComponent: React.FC<{ stepId: string; language: string; onComplete: 
     
     setTimeout(() => {
       if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-        setSelectedAnswer(null);
-        setShowResult(false);
+        // Trigger blinking effect for next round
+        setIsBlinking(true);
+        setTimeout(() => {
+          setCurrentQuestion(currentQuestion + 1);
+          setSelectedAnswer(null);
+          setShowResult(false);
+          setIsBlinking(false);
+        }, 1000);
       } else {
         onComplete();
       }
@@ -513,12 +602,28 @@ const PuzzleComponent: React.FC<{ stepId: string; language: string; onComplete: 
   };
   
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      animate={isBlinking ? {
+        opacity: [1, 0.3, 1, 0.3, 1],
+        scale: [1, 0.95, 1, 0.95, 1]
+      } : {}}
+      transition={{ duration: 1 }}
+    >
       <div className="text-center">
         <h4 className="text-lg font-semibold text-white mb-2">
           Question {currentQuestion + 1} of {questions.length}
         </h4>
         <Progress value={((currentQuestion + 1) / questions.length) * 100} className="mb-4" />
+        {isBlinking && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-blue-300 font-semibold"
+          >
+            🔄 Moving to next question...
+          </motion.div>
+        )}
       </div>
       
       {question.imageUrl && (
@@ -563,11 +668,11 @@ const PuzzleComponent: React.FC<{ stepId: string; language: string; onComplete: 
           </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-// Game Component
+// Game Component (unchanged)
 const GameComponent: React.FC<{ stepId: string; language: string; onComplete: () => void }> = ({ stepId, language, onComplete }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [currentLight, setCurrentLight] = useState<'red' | 'yellow' | 'green'>('red');
