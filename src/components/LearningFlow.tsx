@@ -16,7 +16,9 @@ import {
   Award,
   Sparkles,
   Gift,
-  ArrowRight
+  ArrowRight,
+  Image as ImageIcon,
+  Loader
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -40,12 +42,14 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
   const [completedStep, setCompletedStep] = useState<LearningStep | null>(null);
   const [showNextLessonPrompt, setShowNextLessonPrompt] = useState(false);
   const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
+  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
 
   useEffect(() => {
     const moduleData = learningModules[language] || learningModules.en;
     const userProgress = JSON.parse(localStorage.getItem('learningProgress') || '{}');
     
-    // Load curated images
+    // Load curated images as fallback
     const curatedImages = geminiImageGenerator.getCuratedImages();
     
     // Update modules with user progress and better images
@@ -56,9 +60,11 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
         const isUnlocked = step.isUnlocked || 
           (step.requiredSteps?.every(reqId => moduleProgress[reqId]) ?? false);
         
-        // Use curated images for better topic relevance
+        // Use generated images if available, otherwise curated images
         const imageKey = `${module.id}-${step.type}`;
-        const betterImageUrl = curatedImages[imageKey] || step.imageUrl;
+        const generatedImage = generatedImages[imageKey];
+        const curatedImage = curatedImages[imageKey];
+        const betterImageUrl = generatedImage || curatedImage || step.imageUrl;
         
         return { ...step, isCompleted, isUnlocked, imageUrl: betterImageUrl };
       });
@@ -67,20 +73,90 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
       const progress = (completedSteps / updatedSteps.length) * 100;
       const isCompleted = completedSteps === updatedSteps.length;
       
-      // Use curated main image for module
+      // Use generated or curated main image for module
       const moduleImageKey = `${module.id}-main`;
-      const betterModuleImage = curatedImages[moduleImageKey] || module.imageUrl;
+      const generatedModuleImage = generatedImages[moduleImageKey];
+      const curatedModuleImage = curatedImages[moduleImageKey];
+      const betterModuleImage = generatedModuleImage || curatedModuleImage || module.imageUrl;
       
       return { ...module, steps: updatedSteps, progress, isCompleted, imageUrl: betterModuleImage };
     });
     
     setModules(updatedModules);
     
-    // Generate Gemini image prompts for future use
-    geminiImageGenerator.generateLessonImages(language).then(prompts => {
-      setImagePrompts(prompts);
-    });
-  }, [language]);
+    // Generate Gemini images for better accuracy
+    generateCustomImages();
+  }, [language, generatedImages]);
+
+  const generateCustomImages = async () => {
+    setIsGeneratingImages(true);
+    
+    try {
+      // Generate images for each lesson topic
+      const topics = [
+        {
+          id: 'traffic-signals-lesson',
+          content: 'Traffic light with red, yellow, and green lights at an intersection showing proper signal meanings for road safety education'
+        },
+        {
+          id: 'traffic-signals-puzzle', 
+          content: 'Multiple traffic lights showing different colors for interactive learning puzzle about traffic signal meanings'
+        },
+        {
+          id: 'traffic-signals-game',
+          content: 'Realistic intersection with traffic lights, cars, and pedestrians for traffic signal simulation game'
+        },
+        {
+          id: 'pedestrian-safety-lesson',
+          content: 'Pedestrians safely crossing at zebra crossing with proper safety procedures and crosswalk markings'
+        },
+        {
+          id: 'pedestrian-safety-puzzle',
+          content: 'Side-by-side comparison showing safe and unsafe pedestrian crossing behaviors for educational puzzle'
+        },
+        {
+          id: 'pedestrian-safety-game',
+          content: 'Busy street scene with crosswalks, traffic signals, and pedestrians making safe crossing decisions'
+        }
+      ];
+
+      const newGeneratedImages: Record<string, string> = {};
+      
+      for (const topic of topics) {
+        try {
+          const generatedImage = await geminiImageGenerator.generateCustomLessonImage(
+            topic.id,
+            topic.content,
+            language
+          );
+          
+          if (generatedImage) {
+            newGeneratedImages[topic.id] = generatedImage;
+          }
+        } catch (error) {
+          console.error(`Failed to generate image for ${topic.id}:`, error);
+        }
+      }
+      
+      setGeneratedImages(prev => ({ ...prev, ...newGeneratedImages }));
+      
+      // Store generated images in localStorage for persistence
+      localStorage.setItem('generatedImages', JSON.stringify({ ...generatedImages, ...newGeneratedImages }));
+      
+    } catch (error) {
+      console.error('Error generating custom images:', error);
+    } finally {
+      setIsGeneratingImages(false);
+    }
+  };
+
+  // Load generated images from localStorage on component mount
+  useEffect(() => {
+    const storedImages = localStorage.getItem('generatedImages');
+    if (storedImages) {
+      setGeneratedImages(JSON.parse(storedImages));
+    }
+  }, []);
 
   const speak = (text: string, lang: string) => {
     if ('speechSynthesis' in window) {
@@ -363,12 +439,36 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Image/Visual Section */}
               <div className="space-y-6">
-                <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden">
+                <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden relative">
+                  {isGeneratingImages && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                      <div className="text-center text-white">
+                        <Loader className="w-8 h-8 animate-spin mx-auto mb-2" />
+                        <p className="text-sm">Generating custom image...</p>
+                      </div>
+                    </div>
+                  )}
                   <img 
                     src={step.imageUrl} 
                     alt={step.title}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to curated image if generated image fails
+                      const target = e.target as HTMLImageElement;
+                      const curatedImages = geminiImageGenerator.getCuratedImages();
+                      const imageKey = `${currentModule?.id}-${step.type}`;
+                      const fallbackUrl = curatedImages[imageKey];
+                      if (fallbackUrl && target.src !== fallbackUrl) {
+                        target.src = fallbackUrl;
+                      }
+                    }}
                   />
+                  {generatedImages[`${currentModule?.id}-${step.type}`] && (
+                    <div className="absolute top-2 right-2 bg-green-500/80 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      <ImageIcon className="w-3 h-3" />
+                      AI Generated
+                    </div>
+                  )}
                 </div>
                 
                 {step.type === 'lesson' && step.content && (
@@ -457,6 +557,23 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
 
   return (
     <div className="space-y-8">
+      {/* Image Generation Status */}
+      {isGeneratingImages && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-4 shadow-2xl"
+        >
+          <div className="flex items-center gap-3">
+            <Loader className="w-5 h-5 animate-spin text-blue-400" />
+            <div>
+              <h4 className="font-semibold text-white">Generating Custom Images</h4>
+              <p className="text-blue-200 text-sm">Creating accurate road safety images with Gemini AI...</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {modules.map((module, moduleIndex) => (
         <motion.div
           key={module.id}
@@ -467,12 +584,17 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden relative">
                 <img 
                   src={module.imageUrl} 
                   alt={module.title}
                   className="w-full h-full object-cover"
                 />
+                {generatedImages[`${module.id}-main`] && (
+                  <div className="absolute top-1 right-1 bg-green-500/80 text-white text-xs px-1 py-0.5 rounded-full">
+                    <ImageIcon className="w-2 h-2" />
+                  </div>
+                )}
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white mb-1">{module.title}</h3>
@@ -538,12 +660,18 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
                       {step.description}
                     </p>
                     
-                    <div className="aspect-video bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden mb-4">
+                    <div className="aspect-video bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden mb-4 relative">
                       <img 
                         src={step.imageUrl} 
                         alt={step.title}
                         className="w-full h-full object-cover"
                       />
+                      {generatedImages[`${module.id}-${step.type}`] && (
+                        <div className="absolute top-1 right-1 bg-green-500/80 text-white text-xs px-1 py-0.5 rounded-full flex items-center gap-1">
+                          <ImageIcon className="w-2 h-2" />
+                          AI
+                        </div>
+                      )}
                     </div>
                     
                     <div className="space-y-3">
