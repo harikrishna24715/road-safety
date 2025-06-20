@@ -16,7 +16,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           title: 'Understanding Traffic Signals',
           description: 'Learn the meaning of red, yellow, and green lights',
           imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'Traffic signals are essential for road safety. Red means STOP - you must come to a complete stop. Yellow means CAUTION - prepare to stop if safe to do so. Green means GO - proceed when safe. Always look both ways even on green light.',
+          content: 'Traffic signals are essential for road safety. Red means STOP - you must come to a complete stop. Yellow means CAUTION - prepare to stop if safe to do so. Green means GO - proceed when safe. Always look both ways even on green light. Traffic lights control the flow of vehicles and pedestrians at intersections, preventing accidents and ensuring orderly movement.',
           difficulty: 'easy',
           estimatedTime: '5 minutes',
           isCompleted: false,
@@ -62,7 +62,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           title: 'Safe Walking Rules',
           description: 'Learn how to walk safely near roads and traffic',
           imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'Always use sidewalks when available. Look both ways before crossing. Use crosswalks and obey pedestrian signals. Make eye contact with drivers. Stay visible with bright clothing. Never assume drivers see you.',
+          content: 'Pedestrian safety is crucial for everyone who walks near roads. Always use sidewalks when available. Look both ways before crossing any street. Use designated crosswalks and obey pedestrian signals. Make eye contact with drivers to ensure they see you. Stay visible with bright clothing, especially at night. Never assume drivers see you - always be alert and defensive.',
           difficulty: 'easy',
           estimatedTime: '6 minutes',
           isCompleted: false,
@@ -111,7 +111,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           title: 'यातायात संकेतों को समझना',
           description: 'लाल, पीली और हरी बत्ती का अर्थ जानें',
           imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'यातायात संकेत सड़क सुरक्षा के लिए आवश्यक हैं। लाल का मतलब रुकना - आपको पूरी तरह रुकना होगा। पीला का मतलब सावधानी - यदि सुरक्षित हो तो रुकने की तैयारी करें। हरा का मतलब जाना - सुरक्षित होने पर आगे बढ़ें। हरी बत्ती पर भी हमेशा दोनों तरफ देखें।',
+          content: 'यातायात संकेत सड़क सुरक्षा के लिए आवश्यक हैं। लाल का मतलब रुकना - आपको पूरी तरह रुकना होगा। पीला का मतलब सावधानी - यदि सुरक्षित हो तो रुकने की तैयारी करें। हरा का मतलब जाना - सुरक्षित होने पर आगे बढ़ें। हरी बत्ती पर भी हमेशा दोनों तरफ देखें। ट्रैफिक लाइट चौराहों पर वाहनों और पैदल चलने वालों के प्रवाह को नियंत्रित करती है।',
           difficulty: 'easy',
           estimatedTime: '5 मिनट',
           isCompleted: false,
@@ -159,7 +159,7 @@ export const learningModules: Record<string, LearningModule[]> = {
           title: 'ట్రాఫిక్ సిగ్నల్స్ అర్థం చేసుకోవడం',
           description: 'ఎరుపు, పసుపు మరియు ఆకుపచ్చ లైట్ల అర్థం తెలుసుకోండి',
           imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=600',
-          content: 'ట్రాఫిక్ సిగ్నల్స్ రోడ్డు భద్రతకు అవసరం. ఎరుపు అంటే ఆగు - మీరు పూర్తిగా ఆగాలి. పసుపు అంటే జాగ్రత్త - సురక్షితంగా ఉంటే ఆగడానికి సిద్ధం అవ్వండి. ఆకుపచ్చ అంటే వెళ్లు - సురక్షితంగా ఉన్నప్పుడు ముందుకు వెళ్లండి. ఆకుపచ్చ లైట్ వద్ద కూడా ఎల్లప్పుడూ రెండు వైపులా చూడండి।',
+          content: 'ట్రాఫిక్ సిగ్నల్స్ రోడ్డు భద్రతకు అవసరం. ఎరుపు అంటే ఆగు - మీరు పూర్తిగా ఆగాలి. పసుపు అంటే జాగ్రత్త - సురక్షితంగా ఉంటే ఆగడానికి సిద్ధం అవ్వండి. ఆకుపచ్చ అంటే వెళ్లు - సురక్షితంగా ఉన్నప్పుడు ముందుకు వెళ్లండి. ఆకుపచ్చ లైట్ వద్ద కూడా ఎల్లప్పుడూ రెండు వైపులా చూడండి। ట్రాఫిక్ లైట్లు కూడళ్లలో వాహనాలు మరియు పాదచారుల ప్రవాహాన్ని నియంత్రిస్తాయి।',
           difficulty: 'easy',
           estimatedTime: '5 నిమిషాలు',
           isCompleted: false,
@@ -203,7 +203,7 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['Go slowly', 'Stop completely', 'Speed up', 'Turn left only'],
         correctAnswer: 1,
-        explanation: 'Red light means you must come to a complete stop and wait.',
+        explanation: 'Red light means you must come to a complete stop and wait for the green light.',
         imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
       },
       {
@@ -212,7 +212,16 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['Red light', 'Yellow light', 'Green light', 'No light'],
         correctAnswer: 2,
-        explanation: 'Green light means it is safe to proceed, but always check for other vehicles.',
+        explanation: 'Green light means it is safe to proceed, but always check for other vehicles and pedestrians.',
+        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+      },
+      {
+        id: 'q3',
+        question: 'What should you do when you see a yellow traffic light?',
+        type: 'multiple-choice',
+        options: ['Speed up to get through', 'Stop immediately', 'Prepare to stop if safe', 'Turn around'],
+        correctAnswer: 2,
+        explanation: 'Yellow light means caution - prepare to stop if it is safe to do so.',
         imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ],
@@ -223,7 +232,16 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['Anywhere convenient', 'At crosswalks', 'Between parked cars', 'In the middle of the block'],
         correctAnswer: 1,
-        explanation: 'Always use designated crosswalks for safety.',
+        explanation: 'Always use designated crosswalks for safety. They are marked and visible to drivers.',
+        imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=400'
+      },
+      {
+        id: 'q2',
+        question: 'Before crossing the street, you should:',
+        type: 'multiple-choice',
+        options: ['Look left only', 'Look right only', 'Look both ways', 'Just listen for cars'],
+        correctAnswer: 2,
+        explanation: 'Always look both ways before crossing to check for vehicles coming from either direction.',
         imageUrl: 'https://images.pexels.com/photos/1123262/pexels-photo-1123262.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ]
@@ -236,7 +254,16 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['धीरे जाएं', 'पूरी तरह रुकें', 'तेज़ी से जाएं', 'केवल बाएं मुड़ें'],
         correctAnswer: 1,
-        explanation: 'लाल बत्ती का मतलब है कि आपको पूरी तरह रुकना होगा और इंतज़ार करना होगा।',
+        explanation: 'लाल बत्ती का मतलब है कि आपको पूरी तरह रुकना होगा और हरी बत्ती का इंतज़ार करना होगा।',
+        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+      },
+      {
+        id: 'q2',
+        question: 'ट्रैफिक लाइट पर आप कब आगे बढ़ सकते हैं?',
+        type: 'multiple-choice',
+        options: ['लाल बत्ती', 'पीली बत्ती', 'हरी बत्ती', 'कोई बत्ती नहीं'],
+        correctAnswer: 2,
+        explanation: 'हरी बत्ती का मतलब है कि आगे बढ़ना सुरक्षित है, लेकिन हमेशा अन्य वाहनों की जांच करें।',
         imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ]
@@ -249,7 +276,16 @@ export const puzzleQuestions: Record<string, Record<string, PuzzleQuestion[]>> =
         type: 'multiple-choice',
         options: ['నెమ్మదిగా వెళ్లండి', 'పూర్తిగా ఆగండి', 'వేగంగా వెళ్లండి', 'ఎడమవైపు మాత్రమే తిరుగు'],
         correctAnswer: 1,
-        explanation: 'ఎరుపు లైట్ అంటే మీరు పూర్తిగా ఆగి వేచి ఉండాలి.',
+        explanation: 'ఎరుపు లైట్ అంటే మీరు పూర్తిగా ఆగి ఆకుపచ్చ లైట్ కోసం వేచి ఉండాలి.',
+        imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
+      },
+      {
+        id: 'q2',
+        question: 'ట్రాఫిక్ లైట్ వద్ద మీరు ఎప్పుడు ముందుకు వెళ్లవచ్చు?',
+        type: 'multiple-choice',
+        options: ['ఎరుపు లైట్', 'పసుపు లైట్', 'ఆకుపచ్చ లైట్', 'లైట్ లేకపోతే'],
+        correctAnswer: 2,
+        explanation: 'ఆకుపచ్చ లైట్ అంటే ముందుకు వెళ్లడం సురక్షితం, కానీ ఎల్లప్పుడూ ఇతర వాహనాలను తనిఖీ చేయండి.',
         imageUrl: 'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'
       }
     ]
