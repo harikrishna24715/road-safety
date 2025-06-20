@@ -17,7 +17,9 @@ import {
   ChevronRight,
   Award,
   Zap,
-  Shield
+  Shield,
+  Sparkles,
+  Gift
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -30,29 +32,32 @@ import { updateProgress, getProgress } from '../../lib/supabase';
 const LessonsPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<string[]>(['1', '2', '3']);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [userCountry, setUserCountry] = useState<Country | null>(null);
   const [userLanguage, setUserLanguage] = useState<Language | null>(null);
   const [username, setUsername] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showFirstLessonPrompt, setShowFirstLessonPrompt] = useState(true);
 
   useEffect(() => {
     const country = localStorage.getItem('selectedCountry');
     const language = localStorage.getItem('selectedLanguage');
     const name = localStorage.getItem('username');
+    const userProgress = localStorage.getItem('userProgress');
     
     if (country && language && name) {
       setUserCountry(JSON.parse(country));
       setUserLanguage(JSON.parse(language));
       setUsername(name);
       
-      // Load progress from Supabase
-      const loadProgress = async () => {
-        const progress = await getProgress(JSON.parse(language).code);
-        setCurrentLevel(progress);
-      };
-      loadProgress();
+      // Load fresh user progress
+      if (userProgress) {
+        const progress = JSON.parse(userProgress);
+        setCurrentLevel(progress.currentLevel || 0);
+        setCompletedLessons(progress.completedLessons || []);
+        setShowFirstLessonPrompt(progress.completedLessons?.length === 0);
+      }
     } else {
       navigate('/login');
     }
@@ -106,6 +111,12 @@ const LessonsPage: React.FC = () => {
   const handleLevelChange = async (newLevel: number) => {
     if (newLevel >= 0 && newLevel < lessonLevels.length) {
       setCurrentLevel(newLevel);
+      
+      // Update user progress
+      const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
+      userProgress.currentLevel = newLevel;
+      localStorage.setItem('userProgress', JSON.stringify(userProgress));
+      
       await updateProgress(newLevel, currentLang);
     }
   };
@@ -120,14 +131,30 @@ const LessonsPage: React.FC = () => {
   };
 
   const isLessonUnlocked = (lessonId: string, index: number) => {
+    // First lesson is always unlocked for new users
     if (index === 0) return true;
+    // Other lessons unlock after completing previous ones
     const previousLessonId = sampleLessons[index - 1].id;
     return completedLessons.includes(previousLessonId);
   };
 
   const handleLessonComplete = (lessonId: string) => {
     if (!completedLessons.includes(lessonId)) {
-      setCompletedLessons([...completedLessons, lessonId]);
+      const newCompletedLessons = [...completedLessons, lessonId];
+      setCompletedLessons(newCompletedLessons);
+      
+      // Update user progress
+      const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
+      userProgress.completedLessons = newCompletedLessons;
+      userProgress.lessonsCompleted = newCompletedLessons.length;
+      userProgress.totalPoints = newCompletedLessons.length * 100; // 100 points per lesson
+      localStorage.setItem('userProgress', JSON.stringify(userProgress));
+      
+      // Update individual storage items
+      localStorage.setItem('completedLessons', JSON.stringify(newCompletedLessons));
+      localStorage.setItem('totalPoints', String(newCompletedLessons.length * 100));
+      
+      setShowFirstLessonPrompt(false);
     }
   };
 
@@ -167,7 +194,7 @@ const LessonsPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{lesson.title}</h2>
-                  <p className="text-slate-300">Interactive Learning Experience</p>
+                  <p className="text-slate-300">Your First Interactive Learning Experience</p>
                 </div>
               </div>
               <Button 
@@ -277,7 +304,7 @@ const LessonsPage: React.FC = () => {
                 className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all duration-300"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Mark as Complete
+                Complete Lesson & Earn Points
               </Button>
               <Button 
                 variant="outline" 
@@ -308,6 +335,30 @@ const LessonsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
+        {/* First Lesson Prompt */}
+        {showFirstLessonPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-xl border border-blue-500/30 rounded-3xl p-6 shadow-2xl">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-white mb-1">Ready to Start Your First Lesson? 🎯</h3>
+                  <p className="text-blue-200">
+                    Click on "Traffic Signs and Signals" below to begin your road safety journey. 
+                    You'll earn points and unlock new content as you progress!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -338,7 +389,7 @@ const LessonsPage: React.FC = () => {
                   {getTranslation(currentLang, 'ui', 'interactiveLessons', 'Interactive Lessons')} {userCountry.flag}
                 </h1>
                 <p className="text-slate-300">
-                  Learn road safety through engaging animated content in {userLanguage.nativeName}
+                  Start your journey in {userLanguage.nativeName} - Begin with zero knowledge!
                 </p>
               </div>
             </div>
@@ -450,16 +501,16 @@ const LessonsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Award className="w-5 h-5 text-yellow-400" />
-                Your Progress
+                Your Fresh Start Progress
               </h3>
               <span className="text-sm text-slate-300">
-                {Math.round(((currentLevel + 1) / lessonLevels.length) * 100)}% Complete
+                {Math.round((completedLessons.length / sampleLessons.length) * 100)}% Complete
               </span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden mb-4">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${((currentLevel + 1) / lessonLevels.length) * 100}%` }}
+                animate={{ width: `${(completedLessons.length / sampleLessons.length) * 100}%` }}
                 className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
                 transition={{ duration: 1, delay: 0.3 }}
               />
@@ -467,11 +518,11 @@ const LessonsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-2 text-slate-200">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-sm">{currentLevel + 1} Levels Completed</span>
+                <span className="text-sm">{completedLessons.length} Lessons Completed</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
                 <Target className="w-5 h-5 text-blue-400" />
-                <span className="text-sm">{lessonLevels.length - currentLevel - 1} Remaining</span>
+                <span className="text-sm">{sampleLessons.length - completedLessons.length} Remaining</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
                 <Star className="w-5 h-5 text-yellow-400" />
@@ -486,6 +537,7 @@ const LessonsPage: React.FC = () => {
           {sampleLessons.map((lesson, index) => {
             const isCompleted = completedLessons.includes(lesson.id);
             const isUnlocked = isLessonUnlocked(lesson.id, index);
+            const isFirst = index === 0;
             
             return (
               <motion.div
@@ -501,15 +553,31 @@ const LessonsPage: React.FC = () => {
               >
                 <div className={`bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl h-full transition-all duration-300 ${
                   isUnlocked ? 'hover:shadow-3xl hover:bg-white/15' : 'opacity-60'
-                } ${isCompleted ? 'ring-2 ring-green-500/50' : ''}`}>
+                } ${isCompleted ? 'ring-2 ring-green-500/50' : ''} ${
+                  isFirst && !isCompleted ? 'ring-2 ring-blue-500/50 ring-pulse' : ''
+                }`}>
                   <div className="flex items-center justify-between mb-4">
-                    <Badge className={`bg-gradient-to-r ${getDifficultyColor(lesson.difficulty)} text-white border-0`}>
-                      {lesson.difficulty}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`bg-gradient-to-r ${getDifficultyColor(lesson.difficulty)} text-white border-0`}>
+                        {lesson.difficulty}
+                      </Badge>
+                      {isFirst && !isCompleted && (
+                        <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 text-xs animate-pulse">
+                          START HERE
+                        </Badge>
+                      )}
+                    </div>
                     {isCompleted ? (
                       <CheckCircle className="w-6 h-6 text-green-400" />
                     ) : !isUnlocked ? (
                       <Lock className="w-6 h-6 text-slate-400" />
+                    ) : isFirst ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Sparkles className="w-6 h-6 text-blue-400" />
+                      </motion.div>
                     ) : null}
                   </div>
                   
@@ -526,7 +594,9 @@ const LessonsPage: React.FC = () => {
                           className="flex flex-col items-center"
                         >
                           <Play className="w-8 h-8 text-blue-400 mb-2" />
-                          <p className="text-xs text-slate-400">Click to start</p>
+                          <p className="text-xs text-slate-400">
+                            {isFirst && !isCompleted ? 'Start your journey!' : 'Click to start'}
+                          </p>
                         </motion.div>
                       ) : (
                         <div className="flex flex-col items-center">

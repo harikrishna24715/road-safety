@@ -36,6 +36,57 @@ const LoginPage: React.FC = () => {
     setError('');
   };
 
+  const resetUserProgress = () => {
+    // Clear all existing progress and data
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userProgress');
+    localStorage.removeItem('completedLessons');
+    localStorage.removeItem('quizScores');
+    localStorage.removeItem('achievements');
+    localStorage.removeItem('streakData');
+    localStorage.removeItem('totalPoints');
+    localStorage.removeItem('currentLevel');
+    localStorage.removeItem('lastLoginDate');
+    
+    // Clear any cached lesson data
+    localStorage.removeItem('lessonProgress');
+    localStorage.removeItem('currentLessonIndex');
+    localStorage.removeItem('unlockedLessons');
+    
+    // Clear quiz data
+    localStorage.removeItem('quizProgress');
+    localStorage.removeItem('bestScores');
+    
+    // Clear game data
+    localStorage.removeItem('gameProgress');
+    localStorage.removeItem('simulationScores');
+  };
+
+  const initializeNewUser = () => {
+    // Set fresh user data with zero progress
+    const newUserData = {
+      isNewUser: true,
+      startDate: new Date().toISOString(),
+      currentLevel: 0,
+      totalPoints: 0,
+      streakDays: 0,
+      lessonsCompleted: 0,
+      quizScore: 0,
+      achievements: [],
+      completedLessons: [],
+      unlockedLessons: ['1'], // Only first lesson unlocked
+      lastLoginDate: new Date().toISOString()
+    };
+    
+    // Store initial progress
+    localStorage.setItem('userProgress', JSON.stringify(newUserData));
+    localStorage.setItem('currentLevel', '0');
+    localStorage.setItem('totalPoints', '0');
+    localStorage.setItem('streakDays', '0');
+    localStorage.setItem('completedLessons', JSON.stringify([]));
+    localStorage.setItem('unlockedLessons', JSON.stringify(['1']));
+  };
+
   const handleLogin = () => {
     if (!username.trim() || !selectedCountry || !selectedLanguage) {
       setError('⚠️ Please fill all fields before proceeding');
@@ -45,11 +96,20 @@ const LoginPage: React.FC = () => {
     }
 
     setError('');
-    // Store selections in localStorage for later use
+    
+    // Reset all progress for fresh start
+    resetUserProgress();
+    
+    // Store new user selections
     localStorage.setItem('username', username.trim());
     localStorage.setItem('selectedCountry', JSON.stringify(selectedCountry));
     localStorage.setItem('selectedLanguage', JSON.stringify(selectedLanguage));
-    navigate('/lessons');
+    
+    // Initialize fresh user data
+    initializeNewUser();
+    
+    // Navigate to dashboard with fresh start
+    navigate('/dashboard');
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +156,7 @@ const LoginPage: React.FC = () => {
             transition={{ delay: 0.5 }}
             className="text-slate-300 text-lg"
           >
-            Learn road safety in your language
+            Start your road safety journey from zero
           </motion.p>
         </div>
 
@@ -110,10 +170,10 @@ const LoginPage: React.FC = () => {
             <CardHeader className="text-center pb-6">
               <CardTitle className="flex items-center justify-center gap-3 text-white text-2xl">
                 <Globe className="w-6 h-6 text-blue-400" />
-                Get Started
+                Begin Your Journey
               </CardTitle>
               <CardDescription className="text-slate-300 text-base">
-                Enter your details to begin your personalized learning journey
+                🌟 Start fresh with personalized road safety learning
               </CardDescription>
             </CardHeader>
             
@@ -129,6 +189,19 @@ const LoginPage: React.FC = () => {
                 </motion.div>
               )}
 
+              {/* Welcome Message for New Users */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="p-4 bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl text-center backdrop-blur-sm"
+              >
+                <div className="text-green-300 font-semibold mb-2">🎯 Fresh Start Guaranteed!</div>
+                <div className="text-sm text-slate-300">
+                  Every login begins your learning journey from the very beginning
+                </div>
+              </motion.div>
+
               {/* Username Input */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
@@ -140,7 +213,7 @@ const LoginPage: React.FC = () => {
                   type="text"
                   value={username}
                   onChange={handleUsernameChange}
-                  placeholder="Enter your name"
+                  placeholder="Enter your name to start fresh"
                   className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
                 />
               </div>
@@ -276,7 +349,7 @@ const LoginPage: React.FC = () => {
                     animate={{ opacity: 1 }}
                     className="flex items-center justify-center gap-2"
                   >
-                    🚀 {getTranslation(currentLang, 'ui', 'startLearning', 'Start Learning')}
+                    🚀 {getTranslation(currentLang, 'ui', 'startLearning', 'Start Fresh Journey')}
                   </motion.span>
                 </Button>
               </motion.div>
@@ -292,7 +365,7 @@ const LoginPage: React.FC = () => {
           className="text-center mt-8"
         >
           <p className="text-slate-400 text-sm">
-            Join millions learning road safety worldwide 🌍
+            🌟 Every journey begins with a single step 🌟
           </p>
         </motion.div>
       </motion.div>

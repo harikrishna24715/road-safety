@@ -13,7 +13,9 @@ import {
   Zap,
   Award,
   Star,
-  Shield
+  Shield,
+  Lock,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -31,14 +33,26 @@ const QuizPage: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(30);
   const [quizStarted, setQuizStarted] = useState(false);
   const [username, setUsername] = useState<string>('');
+  const [canTakeQuiz, setCanTakeQuiz] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
 
   const question = sampleQuizQuestions[currentQuestion];
   const progress = ((currentQuestion + 1) / sampleQuizQuestions.length) * 100;
 
   useEffect(() => {
     const name = localStorage.getItem('username');
+    const userProgress = localStorage.getItem('userProgress');
+    const completed = localStorage.getItem('completedLessons');
+    
     if (name) {
       setUsername(name);
+    }
+    
+    if (completed) {
+      const completedArray = JSON.parse(completed);
+      setCompletedLessons(completedArray);
+      // Allow quiz only if at least one lesson is completed
+      setCanTakeQuiz(completedArray.length > 0);
     }
   }, []);
 
@@ -71,6 +85,13 @@ const QuizPage: React.FC = () => {
           setTimeLeft(30);
         } else {
           setQuizCompleted(true);
+          // Update user progress with quiz score
+          const score = calculateScore();
+          const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
+          userProgress.quizScore = score;
+          userProgress.totalPoints = (userProgress.totalPoints || 0) + (score * 10); // Bonus points for quiz
+          localStorage.setItem('userProgress', JSON.stringify(userProgress));
+          localStorage.setItem('quizScore', String(score));
         }
       }, 2000);
     }
@@ -101,6 +122,105 @@ const QuizPage: React.FC = () => {
       default: return 'from-gray-500 to-slate-500';
     }
   };
+
+  // Show locked state if no lessons completed
+  if (!canTakeQuiz) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/dashboard')}
+                className="text-white hover:bg-white/10 flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Button>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl text-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-500 to-slate-600 rounded-2xl mb-6 shadow-2xl"
+              >
+                <Lock className="w-10 h-10 text-white" />
+              </motion.div>
+              
+              <h1 className="text-4xl font-bold text-white mb-3">Quiz Locked 🔒</h1>
+              <p className="text-slate-300 text-lg mb-8">
+                Complete at least one lesson before taking the quiz!
+              </p>
+              
+              <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6 mb-8">
+                <h3 className="text-xl font-semibold text-white mb-3 flex items-center justify-center gap-2">
+                  <BookOpen className="w-6 h-6 text-blue-400" />
+                  How to Unlock Quizzes
+                </h3>
+                <div className="space-y-3 text-slate-300">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">1</span>
+                    <span>Complete your first lesson</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">2</span>
+                    <span>Return here to test your knowledge</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">3</span>
+                    <span>Earn bonus points for good scores</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-1"
+                >
+                  <Button 
+                    onClick={() => navigate('/lessons')} 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 py-4 text-lg transition-all duration-300 shadow-xl hover:shadow-2xl"
+                  >
+                    <BookOpen className="w-5 h-5 mr-2" />
+                    Start Learning
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-1"
+                >
+                  <Button 
+                    onClick={() => navigate('/dashboard')} 
+                    variant="outline"
+                    className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 py-4 text-lg"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   if (!quizStarted) {
     return (
@@ -145,8 +265,31 @@ const QuizPage: React.FC = () => {
                 transition={{ delay: 0.5 }}
                 className="text-slate-300 text-lg mb-8"
               >
-                Test your knowledge with interactive questions
+                Test your knowledge from the lessons you've completed
               </motion.p>
+            </div>
+          </motion.div>
+
+          {/* Progress Indicator */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8"
+          >
+            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-white mb-1">Quiz Unlocked! 🎉</h3>
+                  <p className="text-green-200">
+                    You've completed {completedLessons.length} lesson{completedLessons.length !== 1 ? 's' : ''}. 
+                    Now test your knowledge and earn bonus points!
+                  </p>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -194,8 +337,8 @@ const QuizPage: React.FC = () => {
                   className="text-center p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-white/20 rounded-2xl"
                 >
                   <Trophy className="w-10 h-10 text-purple-400 mx-auto mb-3" />
-                  <div className="font-semibold text-white text-lg">Instant Results</div>
-                  <div className="text-sm text-slate-300">With explanations</div>
+                  <div className="font-semibold text-white text-lg">Bonus Points</div>
+                  <div className="text-sm text-slate-300">For good scores</div>
                 </motion.div>
               </div>
               
@@ -268,7 +411,7 @@ const QuizPage: React.FC = () => {
               transition={{ delay: 0.5 }}
               className="text-slate-300 text-xl mb-8"
             >
-              {username ? `Great job, ${username}!` : 'Great job!'} Here are your results
+              {username ? `Great job, ${username}!` : 'Great job!'} You've earned bonus points!
             </motion.p>
             
             <motion.div
@@ -289,6 +432,9 @@ const QuizPage: React.FC = () => {
                   </motion.div>
                   <div className="text-xl text-slate-300">
                     {correctAnswers} out of {sampleQuizQuestions.length} correct
+                  </div>
+                  <div className="text-sm text-green-300 mt-2">
+                    +{score * 10} bonus points earned!
                   </div>
                 </div>
                 
@@ -324,8 +470,8 @@ const QuizPage: React.FC = () => {
                     className="text-center p-4 bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl"
                   >
                     <Star className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-white">{score}%</div>
-                    <div className="text-sm text-slate-300">Score</div>
+                    <div className="text-2xl font-bold text-white">{score * 10}</div>
+                    <div className="text-sm text-slate-300">Bonus Points</div>
                   </motion.div>
                 </div>
                 
