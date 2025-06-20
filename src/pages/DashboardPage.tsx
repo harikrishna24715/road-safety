@@ -17,7 +17,8 @@ import {
   User,
   Settings,
   Sparkles,
-  Gift
+  Gift,
+  Puzzle
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -32,22 +33,57 @@ const DashboardPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [isNewUser, setIsNewUser] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [userStats, setUserStats] = useState({
+    lessonsCompleted: 0,
+    totalLessons: 6, // 2 modules × 3 steps each
+    quizScore: 0,
+    streakDays: 0,
+    totalPoints: 0,
+    completedSteps: 0
+  });
 
   useEffect(() => {
     const country = localStorage.getItem('selectedCountry');
     const language = localStorage.getItem('selectedLanguage');
     const name = localStorage.getItem('username');
     const userProgress = localStorage.getItem('userProgress');
+    const learningProgress = localStorage.getItem('learningProgress');
     
     if (country && language && name) {
       setUserCountry(JSON.parse(country));
       setUserLanguage(JSON.parse(language));
       setUsername(name);
       
-      // Check if this is a new user
+      // Load user progress
       if (userProgress) {
         const progress = JSON.parse(userProgress);
         setIsNewUser(progress.isNewUser || false);
+        setUserStats(prev => ({
+          ...prev,
+          totalPoints: progress.totalPoints || 0,
+          quizScore: progress.quizScore || 0,
+          streakDays: progress.streakDays || 0
+        }));
+      }
+      
+      // Load learning progress
+      if (learningProgress) {
+        const learning = JSON.parse(learningProgress);
+        let completedSteps = 0;
+        Object.values(learning).forEach((module: any) => {
+          completedSteps += Object.keys(module).length;
+        });
+        
+        setUserStats(prev => ({
+          ...prev,
+          completedSteps,
+          lessonsCompleted: Math.floor(completedSteps / 3) // Each module has 3 steps
+        }));
+        
+        if (completedSteps > 0) {
+          setIsNewUser(false);
+          setShowWelcome(false);
+        }
       }
     } else {
       navigate('/login');
@@ -56,66 +92,87 @@ const DashboardPage: React.FC = () => {
 
   const currentLang = userLanguage?.code || 'en';
 
-  // Fresh user stats - everything starts at zero
-  const stats = {
-    lessonsCompleted: 0,
-    totalLessons: 5,
-    quizScore: 0,
-    streakDays: 0,
-    totalPoints: 0
-  };
-
   const activities = [
     {
       icon: BookOpen,
-      title: getTranslation(currentLang, 'ui', 'interactiveLessons', 'Interactive Lessons'),
-      description: 'Start your first lesson and begin learning road safety',
-      progress: 0,
+      title: getTranslation(currentLang, 'ui', 'interactiveLessons', 'Interactive Learning'),
+      description: 'Complete lessons, puzzles, and games in sequence',
+      progress: (userStats.completedSteps / userStats.totalLessons) * 100,
       action: () => navigate('/lessons'),
       gradient: 'from-blue-500 to-cyan-500',
-      completedText: `Ready to start! ${stats.lessonsCompleted}/${stats.totalLessons} completed`,
+      completedText: `${userStats.completedSteps}/${userStats.totalLessons} steps completed`,
       bgGradient: 'from-blue-500/10 to-cyan-500/10',
-      isNew: true
+      isNew: userStats.completedSteps === 0
     },
     {
       icon: Brain,
       title: getTranslation(currentLang, 'ui', 'knowledgeQuiz', 'Knowledge Quiz'),
       description: 'Test your knowledge after completing lessons',
-      progress: 0,
+      progress: userStats.quizScore,
       action: () => navigate('/quiz'),
       gradient: 'from-green-500 to-emerald-500',
-      completedText: `Complete lessons first to unlock quizzes`,
+      completedText: userStats.lessonsCompleted > 0 ? `Best score: ${userStats.quizScore}%` : 'Complete lessons first',
       bgGradient: 'from-green-500/10 to-emerald-500/10',
-      isLocked: true
+      isLocked: userStats.lessonsCompleted === 0
     },
     {
       icon: Gamepad2,
       title: getTranslation(currentLang, 'ui', 'safetySimulation', 'Safety Simulation'),
-      description: 'Practice in realistic scenarios (unlocks after first lesson)',
+      description: 'Advanced simulations (unlocks after completing modules)',
       progress: 0,
       action: () => navigate('/game'),
       gradient: 'from-purple-500 to-pink-500',
-      completedText: 'Complete your first lesson to unlock',
+      completedText: userStats.lessonsCompleted >= 2 ? 'Advanced simulations available' : 'Complete 2 modules to unlock',
       bgGradient: 'from-purple-500/10 to-pink-500/10',
-      isLocked: true
+      isLocked: userStats.lessonsCompleted < 2
     }
   ];
 
-  // Beginner achievements - all unearned
+  // Enhanced achievements based on learning flow
   const achievements = [
     { name: 'Welcome Aboard', description: 'Complete your profile setup', earned: true, icon: '🎯' },
-    { name: 'First Steps', description: 'Complete your first lesson', earned: false, icon: '📚' },
-    { name: 'Quick Learner', description: 'Complete 3 lessons in a row', earned: false, icon: '⚡' },
-    { name: 'Safety Expert', description: 'Complete all lessons', earned: false, icon: '🏆' }
+    { name: 'First Lesson', description: 'Complete your first lesson', earned: userStats.completedSteps >= 1, icon: '📚' },
+    { name: 'Puzzle Solver', description: 'Complete your first puzzle', earned: userStats.completedSteps >= 2, icon: '🧩' },
+    { name: 'Game Master', description: 'Complete your first game', earned: userStats.completedSteps >= 3, icon: '🎮' },
+    { name: 'Module Complete', description: 'Complete an entire module', earned: userStats.lessonsCompleted >= 1, icon: '🏆' },
+    { name: 'Safety Expert', description: 'Complete all modules', earned: userStats.lessonsCompleted >= 2, icon: '🌟' }
   ];
 
   const handleDismissWelcome = () => {
     setShowWelcome(false);
-    // Update user progress to mark as not new
     const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
     userProgress.isNewUser = false;
     userProgress.welcomeDismissed = true;
     localStorage.setItem('userProgress', JSON.stringify(userProgress));
+  };
+
+  const getWelcomeMessage = () => {
+    switch (currentLang) {
+      case 'hi':
+        return {
+          title: 'रोड सेफ्टी 2.0 में आपका स्वागत है! 🎉',
+          subtitle: `नमस्ते ${username}! आप बिल्कुल शुरुआत से शुरू कर रहे हैं।`,
+          description: 'हम आपको ${userLanguage.nativeName} में सड़क सुरक्षा की यात्रा में कदम दर कदम मार्गदर्शन करेंगे।'
+        };
+      case 'te':
+        return {
+          title: 'రోడ్ సేఫ్టీ 2.0కి స్వాగతం! 🎉',
+          subtitle: `నమస్కారం ${username}! మీరు పూర్తిగా కొత్తగా ప్రారంభిస్తున్నారు।`,
+          description: 'మేము మిమ్మల్ని ${userLanguage.nativeName}లో రోడ్డు భద్రత ప్రయాణంలో అడుగు అడుగునా మార్గనిర్దేశనం చేస్తాము।'
+        };
+      case 'es':
+        return {
+          title: '¡Bienvenido a Road Safety 2.0! 🎉',
+          subtitle: `¡Hola ${username}! Estás empezando completamente desde cero.`,
+          description: 'Te guiaremos paso a paso en tu viaje de seguridad vial en ${userLanguage.nativeName}.'
+        };
+      default:
+        return {
+          title: 'Welcome to Road Safety 2.0! 🎉',
+          subtitle: `Hi ${username}! You're starting fresh with zero knowledge.`,
+          description: `We'll guide you step by step through your road safety journey in ${userLanguage?.nativeName}.`
+        };
+    }
   };
 
   if (!userCountry || !userLanguage || !username) {
@@ -129,6 +186,8 @@ const DashboardPage: React.FC = () => {
       </div>
     );
   }
+
+  const welcomeMessage = getWelcomeMessage();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-6 lg:p-8">
@@ -155,24 +214,30 @@ const DashboardPage: React.FC = () => {
               </motion.div>
               
               <h2 className="text-2xl font-bold text-white mb-3">
-                Welcome to Road Safety 2.0! 🎉
+                {welcomeMessage.title}
               </h2>
+              <p className="text-slate-300 mb-2 font-medium">
+                {welcomeMessage.subtitle}
+              </p>
               <p className="text-slate-300 mb-6 leading-relaxed">
-                Hi {username}! You're starting fresh with zero knowledge. 
-                We'll guide you step by step through your road safety journey in {userLanguage.nativeName}.
+                {welcomeMessage.description}
               </p>
               
               <div className="space-y-3 mb-6 text-sm text-slate-300">
                 <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl">
-                  <span>📚</span>
-                  <span>Start with interactive lessons</span>
+                  <BookOpen className="w-5 h-5 text-blue-400" />
+                  <span>Learn with interactive lessons</span>
                 </div>
                 <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl">
-                  <span>🎯</span>
-                  <span>Unlock quizzes as you progress</span>
+                  <Puzzle className="w-5 h-5 text-purple-400" />
+                  <span>Solve puzzles to practice</span>
                 </div>
                 <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl">
-                  <span>🏆</span>
+                  <Gamepad2 className="w-5 h-5 text-green-400" />
+                  <span>Play games to apply knowledge</span>
+                </div>
+                <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
                   <span>Earn achievements and points</span>
                 </div>
               </div>
@@ -217,7 +282,10 @@ const DashboardPage: React.FC = () => {
                   transition={{ delay: 0.3 }}
                   className="text-slate-300"
                 >
-                  🌟 Starting fresh in {userLanguage.nativeName} - Let's learn together!
+                  {userStats.completedSteps === 0 
+                    ? `🌟 Starting fresh in ${userLanguage.nativeName} - Let's learn together!`
+                    : `📚 Learning in ${userLanguage.nativeName} - ${userStats.completedSteps} steps completed!`
+                  }
                 </motion.p>
               </div>
             </div>
@@ -233,30 +301,32 @@ const DashboardPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Fresh Start Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-xl border border-green-500/30 rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-white mb-1">Fresh Start Mode Activated! 🚀</h3>
-                <p className="text-green-200">
-                  You're beginning with zero knowledge. Every lesson, quiz, and achievement starts fresh. 
-                  Complete your first lesson to unlock more features!
-                </p>
+        {/* Progress Banner */}
+        {userStats.completedSteps > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-xl border border-green-500/30 rounded-3xl p-6 shadow-2xl">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-white mb-1">Great Progress! 🚀</h3>
+                  <p className="text-green-200">
+                    You've completed {userStats.completedSteps} learning steps and earned {userStats.totalPoints} points. 
+                    Keep going to unlock more features!
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
-        {/* Stats Overview - All Zero */}
+        {/* Stats Overview */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -264,10 +334,10 @@ const DashboardPage: React.FC = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
         >
           {[
-            { icon: BookOpen, value: stats.lessonsCompleted, label: getTranslation(currentLang, 'ui', 'lessonsDone', 'Lessons Done'), gradient: 'from-blue-500 to-cyan-500' },
-            { icon: Target, value: `${stats.quizScore}%`, label: getTranslation(currentLang, 'ui', 'quizScore', 'Quiz Score'), gradient: 'from-green-500 to-emerald-500' },
-            { icon: Flame, value: stats.streakDays, label: getTranslation(currentLang, 'ui', 'dayStreak', 'Day Streak'), gradient: 'from-orange-500 to-red-500' },
-            { icon: Trophy, value: stats.totalPoints, label: getTranslation(currentLang, 'ui', 'totalPoints', 'Total Points'), gradient: 'from-purple-500 to-pink-500' }
+            { icon: BookOpen, value: userStats.completedSteps, label: 'Steps Done', gradient: 'from-blue-500 to-cyan-500' },
+            { icon: Target, value: `${userStats.quizScore}%`, label: getTranslation(currentLang, 'ui', 'quizScore', 'Quiz Score'), gradient: 'from-green-500 to-emerald-500' },
+            { icon: Flame, value: userStats.streakDays, label: getTranslation(currentLang, 'ui', 'dayStreak', 'Day Streak'), gradient: 'from-orange-500 to-red-500' },
+            { icon: Trophy, value: userStats.totalPoints, label: getTranslation(currentLang, 'ui', 'totalPoints', 'Total Points'), gradient: 'from-purple-500 to-pink-500' }
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -416,7 +486,7 @@ const DashboardPage: React.FC = () => {
                   </motion.div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* Quick Actions */}
             <motion.div
@@ -443,7 +513,9 @@ const DashboardPage: React.FC = () => {
                   <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
                     <BookOpen className="w-4 h-4 text-white" />
                   </div>
-                  <span className="font-medium">Start First Lesson</span>
+                  <span className="font-medium">
+                    {userStats.completedSteps === 0 ? 'Start Learning' : 'Continue Learning'}
+                  </span>
                   <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
                 </motion.button>
                 
@@ -451,29 +523,57 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.9 }}
-                  disabled
-                  className="w-full flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl text-slate-400 cursor-not-allowed opacity-50"
+                  onClick={() => userStats.lessonsCompleted > 0 && navigate('/quiz')}
+                  disabled={userStats.lessonsCompleted === 0}
+                  className={`w-full flex items-center gap-3 p-4 border rounded-xl transition-all duration-300 ${
+                    userStats.lessonsCompleted > 0 
+                      ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-white cursor-pointer group'
+                      : 'bg-white/5 border-white/10 text-slate-400 cursor-not-allowed opacity-50'
+                  }`}
                 >
-                  <div className="p-2 bg-gradient-to-br from-gray-500 to-slate-500 rounded-lg">
+                  <div className={`p-2 rounded-lg ${
+                    userStats.lessonsCompleted > 0 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-500 group-hover:scale-110 transition-transform duration-300'
+                      : 'bg-gradient-to-br from-gray-500 to-slate-500'
+                  }`}>
                     <Brain className="w-4 h-4 text-white" />
                   </div>
-                  <span className="font-medium">Quiz (Complete lessons first)</span>
+                  <span className="font-medium">
+                    {userStats.lessonsCompleted > 0 ? 'Take Quiz' : 'Quiz (Complete lessons first)'}
+                  </span>
+                  {userStats.lessonsCompleted > 0 && (
+                    <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
+                  )}
                 </motion.button>
                 
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.0 }}
-                  disabled
-                  className="w-full flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl text-slate-400 cursor-not-allowed opacity-50"
+                  onClick={() => userStats.lessonsCompleted >= 2 && navigate('/game')}
+                  disabled={userStats.lessonsCompleted < 2}
+                  className={`w-full flex items-center gap-3 p-4 border rounded-xl transition-all duration-300 ${
+                    userStats.lessonsCompleted >= 2 
+                      ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-white cursor-pointer group'
+                      : 'bg-white/5 border-white/10 text-slate-400 cursor-not-allowed opacity-50'
+                  }`}
                 >
-                  <div className="p-2 bg-gradient-to-br from-gray-500 to-slate-500 rounded-lg">
+                  <div className={`p-2 rounded-lg ${
+                    userStats.lessonsCompleted >= 2 
+                      ? 'bg-gradient-to-br from-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-300'
+                      : 'bg-gradient-to-br from-gray-500 to-slate-500'
+                  }`}>
                     <Gamepad2 className="w-4 h-4 text-white" />
                   </div>
-                  <span className="font-medium">Simulation (Unlock later)</span>
+                  <span className="font-medium">
+                    {userStats.lessonsCompleted >= 2 ? 'Play Simulation' : 'Simulation (Complete 2 modules)'}
+                  </span>
+                  {userStats.lessonsCompleted >= 2 && (
+                    <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
+                  )}
                 </motion.button>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
