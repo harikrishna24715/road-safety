@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, User, AlertCircle, CheckCircle, UserPlus, Loader } from 'lucide-react';
+import { Shield, User, AlertCircle, CheckCircle, UserPlus, Loader, Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { userManager } from '../../lib/userManager';
-import { imagePreloader } from '../../lib/imagePreloader';
+import { replicateImageGenerator } from '../../lib/replicateImageGenerator';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPreloadingImages, setIsPreloadingImages] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
+  const [preloadStatus, setPreloadStatus] = useState('Initializing...');
 
   useEffect(() => {
     // Migrate old user data if exists
@@ -34,6 +35,24 @@ const LoginPage: React.FC = () => {
     try {
       setIsPreloadingImages(true);
       setPreloadProgress(0);
+      setPreloadStatus('Checking cached images...');
+      
+      // Check if we have cached images
+      const cachedImages = replicateImageGenerator.getStoredImages();
+      const imageCount = Object.keys(cachedImages).length;
+      
+      if (imageCount >= 8) {
+        // We have all required images cached
+        setPreloadStatus('Using cached images...');
+        setPreloadProgress(100);
+        setTimeout(() => {
+          setIsPreloadingImages(false);
+        }, 1000);
+        return;
+      }
+      
+      // Generate new images
+      setPreloadStatus('Generating educational images with AI...');
       
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
@@ -42,22 +61,27 @@ const LoginPage: React.FC = () => {
             clearInterval(progressInterval);
             return prev;
           }
-          return prev + 10;
+          return prev + 5;
         });
-      }, 200);
+      }, 3000);
 
-      await imagePreloader.preloadAllImages();
+      await replicateImageGenerator.preloadAllImages();
       
       clearInterval(progressInterval);
       setPreloadProgress(100);
+      setPreloadStatus('Images ready!');
       
       setTimeout(() => {
         setIsPreloadingImages(false);
-      }, 500);
+      }, 1000);
       
     } catch (error) {
       console.error('Error preloading images:', error);
-      setIsPreloadingImages(false);
+      setPreloadStatus('Using fallback images...');
+      setPreloadProgress(100);
+      setTimeout(() => {
+        setIsPreloadingImages(false);
+      }, 1000);
     }
   };
 
@@ -133,9 +157,9 @@ const LoginPage: React.FC = () => {
             Preparing your learning experience...
           </p>
           
-          <div className="w-64 mx-auto">
+          <div className="w-80 mx-auto">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">Loading Images</span>
+              <span className="text-sm text-slate-400">{preloadStatus}</span>
               <span className="text-sm text-slate-400">{preloadProgress}%</span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
@@ -149,9 +173,24 @@ const LoginPage: React.FC = () => {
           </div>
           
           <div className="mt-6 flex items-center justify-center gap-2 text-slate-400">
-            <Loader className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Optimizing for better performance...</span>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Sparkles className="w-4 h-4" />
+            </motion.div>
+            <span className="text-sm">
+              {preloadProgress < 50 ? 'Generating AI images for better learning...' : 
+               preloadProgress < 90 ? 'Almost ready...' : 
+               'Finalizing setup...'}
+            </span>
           </div>
+          
+          {preloadProgress > 0 && preloadProgress < 100 && (
+            <div className="mt-4 text-xs text-slate-500">
+              This may take a moment as we generate custom educational images
+            </div>
+          )}
         </motion.div>
       </div>
     );

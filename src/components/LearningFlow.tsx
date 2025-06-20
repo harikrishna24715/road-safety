@@ -26,7 +26,7 @@ import { learningModules, puzzleQuestions, gameScenarios } from '../../lib/learn
 import { LearningModule, LearningStep } from '../types/learning';
 import { getTranslation, languageMap } from '../../lib/data';
 import { userManager } from '../../lib/userManager';
-import { imagePreloader } from '../../lib/imagePreloader';
+import { replicateImageGenerator } from '../../lib/replicateImageGenerator';
 
 interface LearningFlowProps {
   language: string;
@@ -47,7 +47,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
     const currentUser = userManager.getCurrentUser();
     const userProgress = currentUser?.learningProgress || {};
     
-    // Update modules with user progress and preloaded images
+    // Update modules with user progress and Replicate-generated images
     const updatedModules = moduleData.map(module => {
       const moduleProgress = userProgress[module.id] || {};
       const updatedSteps = module.steps.map(step => {
@@ -55,16 +55,16 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
         const isUnlocked = step.isUnlocked || 
           (step.requiredSteps?.every(reqId => moduleProgress[reqId]) ?? false);
         
-        // Use preloaded images
+        // Use Replicate-generated images
         const imageKey = `${module.id}-${step.type}`;
-        const preloadedImageUrl = imagePreloader.getImageUrl(imageKey);
-        const isGenerated = imagePreloader.isImageGenerated(imageKey);
+        const replicateImageUrl = replicateImageGenerator.getImageUrl(imageKey);
+        const isGenerated = replicateImageGenerator.isImageGenerated(imageKey);
         
         return { 
           ...step, 
           isCompleted, 
           isUnlocked, 
-          imageUrl: preloadedImageUrl,
+          imageUrl: replicateImageUrl,
           isGenerated 
         };
       });
@@ -73,17 +73,17 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
       const progress = (completedSteps / updatedSteps.length) * 100;
       const isCompleted = completedSteps === updatedSteps.length;
       
-      // Use preloaded main image for module
+      // Use Replicate-generated main image for module
       const moduleImageKey = `${module.id}-main`;
-      const preloadedModuleImage = imagePreloader.getImageUrl(moduleImageKey);
-      const isModuleImageGenerated = imagePreloader.isImageGenerated(moduleImageKey);
+      const replicateModuleImage = replicateImageGenerator.getImageUrl(moduleImageKey);
+      const isModuleImageGenerated = replicateImageGenerator.isImageGenerated(moduleImageKey);
       
       return { 
         ...module, 
         steps: updatedSteps, 
         progress, 
         isCompleted, 
-        imageUrl: preloadedModuleImage,
+        imageUrl: replicateModuleImage,
         isGenerated: isModuleImageGenerated 
       };
     });
@@ -377,7 +377,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
                   />
                   {(step as any).isGenerated && (
                     <div className="absolute top-2 right-2 bg-green-500/80 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                      <ImageIcon className="w-3 h-3" />
+                      <Sparkles className="w-3 h-3" />
                       AI Generated
                     </div>
                   )}
@@ -487,7 +487,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
                 />
                 {(module as any).isGenerated && (
                   <div className="absolute top-1 right-1 bg-green-500/80 text-white text-xs px-1 py-0.5 rounded-full">
-                    <ImageIcon className="w-2 h-2" />
+                    <Sparkles className="w-2 h-2" />
                   </div>
                 )}
               </div>
@@ -563,7 +563,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
                       />
                       {(step as any).isGenerated && (
                         <div className="absolute top-1 right-1 bg-green-500/80 text-white text-xs px-1 py-0.5 rounded-full flex items-center gap-1">
-                          <ImageIcon className="w-2 h-2" />
+                          <Sparkles className="w-2 h-2" />
                           AI
                         </div>
                       )}
