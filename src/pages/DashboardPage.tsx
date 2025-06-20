@@ -486,7 +486,7 @@ const DashboardPage: React.FC = () => {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Quick Actions */}
             <motion.div
@@ -573,7 +573,7 @@ const DashboardPage: React.FC = () => {
                   )}
                 </motion.button>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
