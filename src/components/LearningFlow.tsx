@@ -24,6 +24,7 @@ import { Progress } from '../../components/ui/progress';
 import { learningModules, puzzleQuestions, gameScenarios } from '../../lib/learningData';
 import { LearningModule, LearningStep } from '../types/learning';
 import { getTranslation, languageMap } from '../../lib/data';
+import { geminiImageGenerator } from '../../lib/geminiImageGenerator';
 
 interface LearningFlowProps {
   language: string;
@@ -38,12 +39,16 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedStep, setCompletedStep] = useState<LearningStep | null>(null);
   const [showNextLessonPrompt, setShowNextLessonPrompt] = useState(false);
+  const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const moduleData = learningModules[language] || learningModules.en;
     const userProgress = JSON.parse(localStorage.getItem('learningProgress') || '{}');
     
-    // Update modules with user progress
+    // Load curated images
+    const curatedImages = geminiImageGenerator.getCuratedImages();
+    
+    // Update modules with user progress and better images
     const updatedModules = moduleData.map(module => {
       const moduleProgress = userProgress[module.id] || {};
       const updatedSteps = module.steps.map(step => {
@@ -51,17 +56,30 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
         const isUnlocked = step.isUnlocked || 
           (step.requiredSteps?.every(reqId => moduleProgress[reqId]) ?? false);
         
-        return { ...step, isCompleted, isUnlocked };
+        // Use curated images for better topic relevance
+        const imageKey = `${module.id}-${step.type}`;
+        const betterImageUrl = curatedImages[imageKey] || step.imageUrl;
+        
+        return { ...step, isCompleted, isUnlocked, imageUrl: betterImageUrl };
       });
       
       const completedSteps = updatedSteps.filter(step => step.isCompleted).length;
       const progress = (completedSteps / updatedSteps.length) * 100;
       const isCompleted = completedSteps === updatedSteps.length;
       
-      return { ...module, steps: updatedSteps, progress, isCompleted };
+      // Use curated main image for module
+      const moduleImageKey = `${module.id}-main`;
+      const betterModuleImage = curatedImages[moduleImageKey] || module.imageUrl;
+      
+      return { ...module, steps: updatedSteps, progress, isCompleted, imageUrl: betterModuleImage };
     });
     
     setModules(updatedModules);
+    
+    // Generate Gemini image prompts for future use
+    geminiImageGenerator.generateLessonImages(language).then(prompts => {
+      setImagePrompts(prompts);
+    });
   }, [language]);
 
   const speak = (text: string, lang: string) => {
