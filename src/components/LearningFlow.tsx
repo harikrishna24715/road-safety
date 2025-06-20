@@ -17,8 +17,7 @@ import {
   Sparkles,
   Gift,
   ArrowRight,
-  Image as ImageIcon,
-  Loader
+  Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -26,7 +25,8 @@ import { Progress } from '../../components/ui/progress';
 import { learningModules, puzzleQuestions, gameScenarios } from '../../lib/learningData';
 import { LearningModule, LearningStep } from '../types/learning';
 import { getTranslation, languageMap } from '../../lib/data';
-import { geminiImageGenerator } from '../../lib/geminiImageGenerator';
+import { userManager } from '../../lib/userManager';
+import { imagePreloader } from '../../lib/imagePreloader';
 
 interface LearningFlowProps {
   language: string;
@@ -41,18 +41,13 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedStep, setCompletedStep] = useState<LearningStep | null>(null);
   const [showNextLessonPrompt, setShowNextLessonPrompt] = useState(false);
-  const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
-  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
-  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
 
   useEffect(() => {
     const moduleData = learningModules[language] || learningModules.en;
-    const userProgress = JSON.parse(localStorage.getItem('learningProgress') || '{}');
+    const currentUser = userManager.getCurrentUser();
+    const userProgress = currentUser?.learningProgress || {};
     
-    // Load curated images as fallback
-    const curatedImages = geminiImageGenerator.getCuratedImages();
-    
-    // Update modules with user progress and better images
+    // Update modules with user progress and preloaded images
     const updatedModules = moduleData.map(module => {
       const moduleProgress = userProgress[module.id] || {};
       const updatedSteps = module.steps.map(step => {
@@ -60,103 +55,41 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
         const isUnlocked = step.isUnlocked || 
           (step.requiredSteps?.every(reqId => moduleProgress[reqId]) ?? false);
         
-        // Use generated images if available, otherwise curated images
+        // Use preloaded images
         const imageKey = `${module.id}-${step.type}`;
-        const generatedImage = generatedImages[imageKey];
-        const curatedImage = curatedImages[imageKey];
-        const betterImageUrl = generatedImage || curatedImage || step.imageUrl;
+        const preloadedImageUrl = imagePreloader.getImageUrl(imageKey);
+        const isGenerated = imagePreloader.isImageGenerated(imageKey);
         
-        return { ...step, isCompleted, isUnlocked, imageUrl: betterImageUrl };
+        return { 
+          ...step, 
+          isCompleted, 
+          isUnlocked, 
+          imageUrl: preloadedImageUrl,
+          isGenerated 
+        };
       });
       
       const completedSteps = updatedSteps.filter(step => step.isCompleted).length;
       const progress = (completedSteps / updatedSteps.length) * 100;
       const isCompleted = completedSteps === updatedSteps.length;
       
-      // Use generated or curated main image for module
+      // Use preloaded main image for module
       const moduleImageKey = `${module.id}-main`;
-      const generatedModuleImage = generatedImages[moduleImageKey];
-      const curatedModuleImage = curatedImages[moduleImageKey];
-      const betterModuleImage = generatedModuleImage || curatedModuleImage || module.imageUrl;
+      const preloadedModuleImage = imagePreloader.getImageUrl(moduleImageKey);
+      const isModuleImageGenerated = imagePreloader.isImageGenerated(moduleImageKey);
       
-      return { ...module, steps: updatedSteps, progress, isCompleted, imageUrl: betterModuleImage };
+      return { 
+        ...module, 
+        steps: updatedSteps, 
+        progress, 
+        isCompleted, 
+        imageUrl: preloadedModuleImage,
+        isGenerated: isModuleImageGenerated 
+      };
     });
     
     setModules(updatedModules);
-    
-    // Generate Gemini images for better accuracy
-    generateCustomImages();
-  }, [language, generatedImages]);
-
-  const generateCustomImages = async () => {
-    setIsGeneratingImages(true);
-    
-    try {
-      // Generate images for each lesson topic
-      const topics = [
-        {
-          id: 'traffic-signals-lesson',
-          content: 'Traffic light with red, yellow, and green lights at an intersection showing proper signal meanings for road safety education'
-        },
-        {
-          id: 'traffic-signals-puzzle', 
-          content: 'Multiple traffic lights showing different colors for interactive learning puzzle about traffic signal meanings'
-        },
-        {
-          id: 'traffic-signals-game',
-          content: 'Realistic intersection with traffic lights, cars, and pedestrians for traffic signal simulation game'
-        },
-        {
-          id: 'pedestrian-safety-lesson',
-          content: 'Pedestrians safely crossing at zebra crossing with proper safety procedures and crosswalk markings'
-        },
-        {
-          id: 'pedestrian-safety-puzzle',
-          content: 'Side-by-side comparison showing safe and unsafe pedestrian crossing behaviors for educational puzzle'
-        },
-        {
-          id: 'pedestrian-safety-game',
-          content: 'Busy street scene with crosswalks, traffic signals, and pedestrians making safe crossing decisions'
-        }
-      ];
-
-      const newGeneratedImages: Record<string, string> = {};
-      
-      for (const topic of topics) {
-        try {
-          const generatedImage = await geminiImageGenerator.generateCustomLessonImage(
-            topic.id,
-            topic.content,
-            language
-          );
-          
-          if (generatedImage) {
-            newGeneratedImages[topic.id] = generatedImage;
-          }
-        } catch (error) {
-          console.error(`Failed to generate image for ${topic.id}:`, error);
-        }
-      }
-      
-      setGeneratedImages(prev => ({ ...prev, ...newGeneratedImages }));
-      
-      // Store generated images in localStorage for persistence
-      localStorage.setItem('generatedImages', JSON.stringify({ ...generatedImages, ...newGeneratedImages }));
-      
-    } catch (error) {
-      console.error('Error generating custom images:', error);
-    } finally {
-      setIsGeneratingImages(false);
-    }
-  };
-
-  // Load generated images from localStorage on component mount
-  useEffect(() => {
-    const storedImages = localStorage.getItem('generatedImages');
-    if (storedImages) {
-      setGeneratedImages(JSON.parse(storedImages));
-    }
-  }, []);
+  }, [language]);
 
   const speak = (text: string, lang: string) => {
     if ('speechSynthesis' in window) {
@@ -185,15 +118,10 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
   };
 
   const handleStepComplete = (step: LearningStep) => {
-    // Update local storage
-    const userProgress = JSON.parse(localStorage.getItem('learningProgress') || '{}');
-    if (!userProgress[currentModule!.id]) {
-      userProgress[currentModule!.id] = {};
-    }
-    userProgress[currentModule!.id][step.id] = true;
-    localStorage.setItem('learningProgress', JSON.stringify(userProgress));
+    // Update user progress through UserManager
+    userManager.updateLearningProgress(currentModule!.id, step.id, true);
     
-    // Update state
+    // Update local state
     setCompletedStep(step);
     setShowCompletionModal(true);
     onComplete(step.id, step.type);
@@ -206,6 +134,8 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
             return { ...s, isCompleted: true };
           }
           // Unlock next steps
+          const currentUser = userManager.getCurrentUser();
+          const userProgress = currentUser?.learningProgress || {};
           const isUnlocked = s.isUnlocked || 
             (s.requiredSteps?.every(reqId => 
               reqId === step.id || userProgress[module.id]?.[reqId]
@@ -440,30 +370,12 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
               {/* Image/Visual Section */}
               <div className="space-y-6">
                 <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden relative">
-                  {isGeneratingImages && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                      <div className="text-center text-white">
-                        <Loader className="w-8 h-8 animate-spin mx-auto mb-2" />
-                        <p className="text-sm">Generating custom image...</p>
-                      </div>
-                    </div>
-                  )}
                   <img 
                     src={step.imageUrl} 
                     alt={step.title}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to curated image if generated image fails
-                      const target = e.target as HTMLImageElement;
-                      const curatedImages = geminiImageGenerator.getCuratedImages();
-                      const imageKey = `${currentModule?.id}-${step.type}`;
-                      const fallbackUrl = curatedImages[imageKey];
-                      if (fallbackUrl && target.src !== fallbackUrl) {
-                        target.src = fallbackUrl;
-                      }
-                    }}
                   />
-                  {generatedImages[`${currentModule?.id}-${step.type}`] && (
+                  {(step as any).isGenerated && (
                     <div className="absolute top-2 right-2 bg-green-500/80 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                       <ImageIcon className="w-3 h-3" />
                       AI Generated
@@ -557,23 +469,6 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
 
   return (
     <div className="space-y-8">
-      {/* Image Generation Status */}
-      {isGeneratingImages && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-4 shadow-2xl"
-        >
-          <div className="flex items-center gap-3">
-            <Loader className="w-5 h-5 animate-spin text-blue-400" />
-            <div>
-              <h4 className="font-semibold text-white">Generating Custom Images</h4>
-              <p className="text-blue-200 text-sm">Creating accurate road safety images with Gemini AI...</p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {modules.map((module, moduleIndex) => (
         <motion.div
           key={module.id}
@@ -590,7 +485,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
                   alt={module.title}
                   className="w-full h-full object-cover"
                 />
-                {generatedImages[`${module.id}-main`] && (
+                {(module as any).isGenerated && (
                   <div className="absolute top-1 right-1 bg-green-500/80 text-white text-xs px-1 py-0.5 rounded-full">
                     <ImageIcon className="w-2 h-2" />
                   </div>
@@ -666,7 +561,7 @@ const LearningFlow: React.FC<LearningFlowProps> = ({ language, onComplete }) => 
                         alt={step.title}
                         className="w-full h-full object-cover"
                       />
-                      {generatedImages[`${module.id}-${step.type}`] && (
+                      {(step as any).isGenerated && (
                         <div className="absolute top-1 right-1 bg-green-500/80 text-white text-xs px-1 py-0.5 rounded-full flex items-center gap-1">
                           <ImageIcon className="w-2 h-2" />
                           AI

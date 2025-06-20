@@ -1,115 +1,100 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Globe, ChevronDown, User, MapPin, Languages } from 'lucide-react';
+import { Shield, User, AlertCircle, CheckCircle, UserPlus, Loader } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { countries, getTranslation, type Country, type Language } from '../../lib/data';
+import { userManager } from '../../lib/userManager';
+import { imagePreloader } from '../../lib/imagePreloader';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
-  const [showCountries, setShowCountries] = useState(false);
-  const [showLanguages, setShowLanguages] = useState(false);
   const [error, setError] = useState('');
-  const [shakeButton, setShakeButton] = useState(false);
-  const [dodgeButton, setDodgeButton] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPreloadingImages, setIsPreloadingImages] = useState(true);
+  const [preloadProgress, setPreloadProgress] = useState(0);
 
-  // Default to English for initial UI
-  const currentLang = selectedLanguage?.code || 'en';
-
-  const handleCountrySelect = (country: Country) => {
-    setSelectedCountry(country);
-    // Auto-select English if available, otherwise first language
-    const defaultLang = country.languages.find(lang => lang.code === 'en') || country.languages[0];
-    setSelectedLanguage(defaultLang);
-    setShowCountries(false);
-    setShowLanguages(false);
-    setError('');
-  };
-
-  const handleLanguageSelect = (language: Language) => {
-    setSelectedLanguage(language);
-    setShowLanguages(false);
-    setError('');
-  };
-
-  const resetUserProgress = () => {
-    // Clear all existing progress and data
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userProgress');
-    localStorage.removeItem('completedLessons');
-    localStorage.removeItem('quizScores');
-    localStorage.removeItem('achievements');
-    localStorage.removeItem('streakData');
-    localStorage.removeItem('totalPoints');
-    localStorage.removeItem('currentLevel');
-    localStorage.removeItem('lastLoginDate');
+  useEffect(() => {
+    // Migrate old user data if exists
+    userManager.migrateOldUserData();
     
-    // Clear any cached lesson data
-    localStorage.removeItem('lessonProgress');
-    localStorage.removeItem('currentLessonIndex');
-    localStorage.removeItem('unlockedLessons');
-    
-    // Clear quiz data
-    localStorage.removeItem('quizProgress');
-    localStorage.removeItem('bestScores');
-    
-    // Clear game data
-    localStorage.removeItem('gameProgress');
-    localStorage.removeItem('simulationScores');
-  };
-
-  const initializeNewUser = () => {
-    // Set fresh user data with zero progress
-    const newUserData = {
-      isNewUser: true,
-      startDate: new Date().toISOString(),
-      currentLevel: 0,
-      totalPoints: 0,
-      streakDays: 0,
-      lessonsCompleted: 0,
-      quizScore: 0,
-      achievements: [],
-      completedLessons: [],
-      unlockedLessons: ['1'], // Only first lesson unlocked
-      lastLoginDate: new Date().toISOString()
-    };
-    
-    // Store initial progress
-    localStorage.setItem('userProgress', JSON.stringify(newUserData));
-    localStorage.setItem('currentLevel', '0');
-    localStorage.setItem('totalPoints', '0');
-    localStorage.setItem('streakDays', '0');
-    localStorage.setItem('completedLessons', JSON.stringify([]));
-    localStorage.setItem('unlockedLessons', JSON.stringify(['1']));
-  };
-
-  const handleLogin = () => {
-    if (!username.trim() || !selectedCountry || !selectedLanguage) {
-      setError('⚠️ Please fill all fields before proceeding');
-      setShakeButton(true);
-      setTimeout(() => setShakeButton(false), 600);
+    // Check if user is already logged in
+    const currentUser = userManager.getCurrentUser();
+    if (currentUser) {
+      navigate('/dashboard');
       return;
     }
 
+    // Pre-load images on app start
+    preloadImages();
+  }, [navigate]);
+
+  const preloadImages = async () => {
+    try {
+      setIsPreloadingImages(true);
+      setPreloadProgress(0);
+      
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setPreloadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      await imagePreloader.preloadAllImages();
+      
+      clearInterval(progressInterval);
+      setPreloadProgress(100);
+      
+      setTimeout(() => {
+        setIsPreloadingImages(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error preloading images:', error);
+      setIsPreloadingImages(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!username.trim()) {
+      setError('Please enter your username');
+      return;
+    }
+
+    setIsLoading(true);
     setError('');
-    
-    // Reset all progress for fresh start
-    resetUserProgress();
-    
-    // Store new user selections
-    localStorage.setItem('username', username.trim());
-    localStorage.setItem('selectedCountry', JSON.stringify(selectedCountry));
-    localStorage.setItem('selectedLanguage', JSON.stringify(selectedLanguage));
-    
-    // Initialize fresh user data
-    initializeNewUser();
-    
-    // Navigate to dashboard with fresh start
-    navigate('/dashboard');
+
+    try {
+      const result = userManager.loginUser(username.trim());
+      
+      if (result.success && result.user) {
+        // Store compatibility data
+        localStorage.setItem('username', result.user.username);
+        localStorage.setItem('selectedCountry', JSON.stringify({
+          name: result.user.country,
+          flag: '🌍' // Default flag
+        }));
+        localStorage.setItem('selectedLanguage', JSON.stringify({
+          code: result.user.language,
+          name: result.user.language,
+          nativeName: result.user.language
+        }));
+        
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,12 +102,60 @@ const LoginPage: React.FC = () => {
     if (error) setError('');
   };
 
-  const handleButtonHover = () => {
-    if (!username.trim() || !selectedCountry || !selectedLanguage) {
-      setDodgeButton(true);
-      setTimeout(() => setDodgeButton(false), 300);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLogin();
     }
   };
+
+  // Show image preloading screen
+  if (isPreloadingImages) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
+          >
+            <Shield className="w-10 h-10 text-white" />
+          </motion.div>
+          
+          <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            Road Safety 2.0
+          </h1>
+          <p className="text-slate-300 text-lg mb-8">
+            Preparing your learning experience...
+          </p>
+          
+          <div className="w-64 mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-400">Loading Images</span>
+              <span className="text-sm text-slate-400">{preloadProgress}%</span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${preloadProgress}%` }}
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6 flex items-center justify-center gap-2 text-slate-400">
+            <Loader className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Optimizing for better performance...</span>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -156,7 +189,7 @@ const LoginPage: React.FC = () => {
             transition={{ delay: 0.5 }}
             className="text-slate-300 text-lg"
           >
-            Start your road safety journey from zero
+            Welcome back! Continue your learning journey
           </motion.p>
         </div>
 
@@ -169,11 +202,11 @@ const LoginPage: React.FC = () => {
           <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl">
             <CardHeader className="text-center pb-6">
               <CardTitle className="flex items-center justify-center gap-3 text-white text-2xl">
-                <Globe className="w-6 h-6 text-blue-400" />
-                Begin Your Journey
+                <User className="w-6 h-6 text-blue-400" />
+                Login to Your Account
               </CardTitle>
               <CardDescription className="text-slate-300 text-base">
-                🌟 Start fresh with personalized road safety learning
+                🔐 Enter your username to continue learning
               </CardDescription>
             </CardHeader>
             
@@ -183,8 +216,9 @@ const LoginPage: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-center backdrop-blur-sm"
+                  className="p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-center backdrop-blur-sm flex items-center gap-2"
                 >
+                  <AlertCircle className="w-5 h-5" />
                   {error}
                 </motion.div>
               )}
@@ -193,151 +227,69 @@ const LoginPage: React.FC = () => {
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  Your Name
+                  Username
                 </label>
                 <motion.input
                   whileFocus={{ scale: 1.02 }}
                   type="text"
                   value={username}
                   onChange={handleUsernameChange}
-                  placeholder="Enter your name to start fresh"
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter your username"
                   className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
                 />
               </div>
 
-              {/* Country Selection */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {getTranslation(currentLang, 'ui', 'chooseCountry', 'Choose your Country')}
-                </label>
-                <div className="relative">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowCountries(!showCountries)}
-                    className="w-full flex items-center justify-between p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white hover:bg-white/15 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  >
-                    <span className="flex items-center gap-3">
-                      {selectedCountry ? (
-                        <>
-                          <span className="text-2xl">{selectedCountry.flag}</span>
-                          <span>{selectedCountry.name}</span>
-                        </>
-                      ) : (
-                        <span className="text-slate-400">
-                          {getTranslation(currentLang, 'ui', 'selectCountry', 'Select your country')}
-                        </span>
-                      )}
-                    </span>
-                    <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${showCountries ? 'rotate-180' : ''}`} />
-                  </motion.button>
-                  
-                  {showCountries && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      className="absolute z-20 w-full mt-2 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl max-h-60 overflow-y-auto"
-                    >
-                      {countries.map((country) => (
-                        <motion.button
-                          key={country.code}
-                          whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
-                          onClick={() => handleCountrySelect(country)}
-                          className="w-full flex items-center gap-3 p-4 text-slate-800 hover:text-blue-600 transition-colors text-left border-b border-slate-200/50 last:border-b-0"
-                        >
-                          <span className="text-2xl">{country.flag}</span>
-                          <span className="font-medium">{country.name}</span>
-                        </motion.button>
-                      ))}
-                    </motion.div>
-                  )}
-                </div>
-              </div>
-
-              {/* Language Selection */}
-              {selectedCountry && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-2"
-                >
-                  <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
-                    <Languages className="w-4 h-4" />
-                    {getTranslation(currentLang, 'ui', 'preferredLanguage', 'Preferred Language')}
-                  </label>
-                  <div className="relative">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowLanguages(!showLanguages)}
-                      className="w-full flex items-center justify-between p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white hover:bg-white/15 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    >
-                      <span className="flex items-center gap-3">
-                        {selectedLanguage ? (
-                          <>
-                            <span className="font-medium">{selectedLanguage.nativeName}</span>
-                            <span className="text-sm text-slate-400">({selectedLanguage.name})</span>
-                          </>
-                        ) : (
-                          <span className="text-slate-400">
-                            {getTranslation(currentLang, 'ui', 'selectLanguage', 'Select your language')}
-                          </span>
-                        )}
-                      </span>
-                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${showLanguages ? 'rotate-180' : ''}`} />
-                    </motion.button>
-                    
-                    {showLanguages && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        className="absolute z-20 w-full mt-2 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl"
-                      >
-                        {selectedCountry.languages.map((language) => (
-                          <motion.button
-                            key={language.code}
-                            whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
-                            onClick={() => handleLanguageSelect(language)}
-                            className="w-full flex items-center justify-between p-4 text-slate-800 hover:text-blue-600 transition-colors text-left border-b border-slate-200/50 last:border-b-0"
-                          >
-                            <span className="font-medium">{language.nativeName}</span>
-                            <span className="text-sm text-slate-500">{language.name}</span>
-                          </motion.button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
               {/* Login Button */}
               <motion.div
-                animate={shakeButton ? {
-                  x: [-10, 10, -10, 10, 0],
-                  transition: { duration: 0.6 }
-                } : dodgeButton ? {
-                  x: [0, 20, -20, 0],
-                  transition: { duration: 0.3 }
-                } : {}}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Button
                   onClick={handleLogin}
-                  onMouseEnter={handleButtonHover}
-                  disabled={!username.trim() || !selectedCountry || !selectedLanguage}
+                  disabled={isLoading || !username.trim()}
                   className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
                   size="lg"
                 >
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center gap-2"
+                  {isLoading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
+                    />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                  )}
+                  {isLoading ? 'Logging in...' : 'Login'}
+                </Button>
+              </motion.div>
+
+              {/* Register Link */}
+              <div className="text-center">
+                <p className="text-slate-400 text-sm">
+                  Don't have an account?{' '}
+                  <Link 
+                    to="/register" 
+                    className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
                   >
-                    🚀 {getTranslation(currentLang, 'ui', 'startLearning', 'Start Fresh Journey')}
-                  </motion.span>
+                    Create one here
+                  </Link>
+                </p>
+              </div>
+
+              {/* Quick Register Button */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  onClick={() => navigate('/register')}
+                  variant="outline"
+                  className="w-full p-4 text-lg font-semibold bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-300 rounded-xl"
+                  size="lg"
+                >
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  Create New Account
                 </Button>
               </motion.div>
             </CardContent>
@@ -352,7 +304,7 @@ const LoginPage: React.FC = () => {
           className="text-center mt-8"
         >
           <p className="text-slate-400 text-sm">
-            🌟 Every journey begins with a single step 🌟
+            🌟 Your progress is saved and will continue where you left off 🌟
           </p>
         </motion.div>
       </motion.div>

@@ -18,102 +18,62 @@ import {
   Settings,
   Sparkles,
   Gift,
-  Puzzle
+  Puzzle,
+  LogOut
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
-import { getTranslation, type Country, type Language } from '../../lib/data';
+import { getTranslation } from '../../lib/data';
+import { userManager, type UserProfile } from '../../lib/userManager';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [userCountry, setUserCountry] = useState<Country | null>(null);
-  const [userLanguage, setUserLanguage] = useState<Language | null>(null);
-  const [username, setUsername] = useState<string>('');
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isNewUser, setIsNewUser] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [userStats, setUserStats] = useState({
-    lessonsCompleted: 0,
-    totalLessons: 6, // 2 modules × 3 steps each
-    quizScore: 0,
-    streakDays: 0,
-    totalPoints: 0,
-    completedSteps: 0
-  });
 
   useEffect(() => {
-    const country = localStorage.getItem('selectedCountry');
-    const language = localStorage.getItem('selectedLanguage');
-    const name = localStorage.getItem('username');
-    const userProgress = localStorage.getItem('userProgress');
-    const learningProgress = localStorage.getItem('learningProgress');
+    const user = userManager.getCurrentUser();
     
-    if (country && language && name) {
-      setUserCountry(JSON.parse(country));
-      setUserLanguage(JSON.parse(language));
-      setUsername(name);
-      
-      // Load user progress
-      if (userProgress) {
-        const progress = JSON.parse(userProgress);
-        setIsNewUser(progress.isNewUser || false);
-        setUserStats(prev => ({
-          ...prev,
-          totalPoints: progress.totalPoints || 0,
-          quizScore: progress.quizScore || 0,
-          streakDays: progress.streakDays || 0
-        }));
-      }
-      
-      // Load learning progress
-      if (learningProgress) {
-        const learning = JSON.parse(learningProgress);
-        let completedSteps = 0;
-        Object.values(learning).forEach((module: any) => {
-          completedSteps += Object.keys(module).length;
-        });
-        
-        setUserStats(prev => ({
-          ...prev,
-          completedSteps,
-          lessonsCompleted: Math.floor(completedSteps / 3) // Each module has 3 steps
-        }));
-        
-        if (completedSteps > 0) {
-          setIsNewUser(false);
-          setShowWelcome(false);
-        }
-      }
-    } else {
+    if (!user) {
       navigate('/login');
+      return;
     }
+
+    setCurrentUser(user);
+    
+    // Check if user has any progress
+    const hasProgress = Object.keys(user.learningProgress).length > 0;
+    setIsNewUser(!hasProgress);
+    setShowWelcome(!hasProgress);
   }, [navigate]);
 
-  const currentLang = userLanguage?.code || 'en';
+  const currentLang = currentUser?.language || 'en';
 
   const activities = [
     {
       icon: BookOpen,
       title: getTranslation(currentLang, 'ui', 'interactiveLessons', 'Interactive Learning'),
       description: 'Complete lessons, puzzles, and games in sequence',
-      progress: (userStats.completedSteps / userStats.totalLessons) * 100,
+      progress: currentUser ? (currentUser.lessonsCompleted / 2) * 100 : 0, // 2 modules total
       action: () => navigate('/lessons'),
       gradient: 'from-blue-500 to-cyan-500',
-      completedText: `${userStats.completedSteps}/${userStats.totalLessons} steps completed`,
+      completedText: `${currentUser?.lessonsCompleted || 0}/2 modules completed`,
       bgGradient: 'from-blue-500/10 to-cyan-500/10',
-      isNew: userStats.completedSteps === 0
+      isNew: (currentUser?.lessonsCompleted || 0) === 0
     },
     {
       icon: Brain,
       title: getTranslation(currentLang, 'ui', 'knowledgeQuiz', 'Knowledge Quiz'),
       description: 'Test your knowledge after completing lessons',
-      progress: userStats.quizScore,
+      progress: currentUser?.quizScore || 0,
       action: () => navigate('/quiz'),
       gradient: 'from-green-500 to-emerald-500',
-      completedText: userStats.lessonsCompleted > 0 ? `Best score: ${userStats.quizScore}%` : 'Complete lessons first',
+      completedText: (currentUser?.lessonsCompleted || 0) > 0 ? `Best score: ${currentUser?.quizScore || 0}%` : 'Complete lessons first',
       bgGradient: 'from-green-500/10 to-emerald-500/10',
-      isLocked: userStats.lessonsCompleted === 0
+      isLocked: (currentUser?.lessonsCompleted || 0) === 0
     },
     {
       icon: Gamepad2,
@@ -122,28 +82,29 @@ const DashboardPage: React.FC = () => {
       progress: 0,
       action: () => navigate('/game'),
       gradient: 'from-purple-500 to-pink-500',
-      completedText: userStats.lessonsCompleted >= 2 ? 'Advanced simulations available' : 'Complete 2 modules to unlock',
+      completedText: (currentUser?.lessonsCompleted || 0) >= 2 ? 'Advanced simulations available' : 'Complete 2 modules to unlock',
       bgGradient: 'from-purple-500/10 to-pink-500/10',
-      isLocked: userStats.lessonsCompleted < 2
+      isLocked: (currentUser?.lessonsCompleted || 0) < 2
     }
   ];
 
   // Enhanced achievements based on learning flow
   const achievements = [
     { name: 'Welcome Aboard', description: 'Complete your profile setup', earned: true, icon: '🎯' },
-    { name: 'First Lesson', description: 'Complete your first lesson', earned: userStats.completedSteps >= 1, icon: '📚' },
-    { name: 'Puzzle Solver', description: 'Complete your first puzzle', earned: userStats.completedSteps >= 2, icon: '🧩' },
-    { name: 'Game Master', description: 'Complete your first game', earned: userStats.completedSteps >= 3, icon: '🎮' },
-    { name: 'Module Complete', description: 'Complete an entire module', earned: userStats.lessonsCompleted >= 1, icon: '🏆' },
-    { name: 'Safety Expert', description: 'Complete all modules', earned: userStats.lessonsCompleted >= 2, icon: '🌟' }
+    { name: 'First Lesson', description: 'Complete your first lesson', earned: (currentUser?.lessonsCompleted || 0) >= 1, icon: '📚' },
+    { name: 'Puzzle Solver', description: 'Complete your first puzzle', earned: Object.keys(currentUser?.learningProgress || {}).length > 0, icon: '🧩' },
+    { name: 'Game Master', description: 'Complete your first game', earned: Object.keys(currentUser?.learningProgress || {}).length > 0, icon: '🎮' },
+    { name: 'Module Complete', description: 'Complete an entire module', earned: (currentUser?.lessonsCompleted || 0) >= 1, icon: '🏆' },
+    { name: 'Safety Expert', description: 'Complete all modules', earned: (currentUser?.lessonsCompleted || 0) >= 2, icon: '🌟' }
   ];
 
   const handleDismissWelcome = () => {
     setShowWelcome(false);
-    const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
-    userProgress.isNewUser = false;
-    userProgress.welcomeDismissed = true;
-    localStorage.setItem('userProgress', JSON.stringify(userProgress));
+  };
+
+  const handleLogout = () => {
+    userManager.logout();
+    navigate('/login');
   };
 
   const getWelcomeMessage = () => {
@@ -151,31 +112,31 @@ const DashboardPage: React.FC = () => {
       case 'hi':
         return {
           title: 'रोड सेफ्टी 2.0 में आपका स्वागत है! 🎉',
-          subtitle: `नमस्ते ${username}! आप बिल्कुल शुरुआत से शुरू कर रहे हैं।`,
-          description: 'हम आपको ${userLanguage.nativeName} में सड़क सुरक्षा की यात्रा में कदम दर कदम मार्गदर्शन करेंगे।'
+          subtitle: `नमस्ते ${currentUser?.username}! आप बिल्कुल शुरुआत से शुरू कर रहे हैं।`,
+          description: 'हम आपको सड़क सुरक्षा की यात्रा में कदम दर कदम मार्गदर्शन करेंगे।'
         };
       case 'te':
         return {
           title: 'రోడ్ సేఫ్టీ 2.0కి స్వాగతం! 🎉',
-          subtitle: `నమస్కారం ${username}! మీరు పూర్తిగా కొత్తగా ప్రారంభిస్తున్నారు।`,
-          description: 'మేము మిమ్మల్ని ${userLanguage.nativeName}లో రోడ్డు భద్రత ప్రయాణంలో అడుగు అడుగునా మార్గనిర్దేశనం చేస్తాము।'
+          subtitle: `నమస్కారం ${currentUser?.username}! మీరు పూర్తిగా కొత్తగా ప్రారంభిస్తున్నారు।`,
+          description: 'మేము మిమ్మల్ని రోడ్డు భద్రత ప్రయాణంలో అడుగు అడుగునా మార్గనిర్దేశనం చేస్తాము।'
         };
       case 'es':
         return {
           title: '¡Bienvenido a Road Safety 2.0! 🎉',
-          subtitle: `¡Hola ${username}! Estás empezando completamente desde cero.`,
-          description: 'Te guiaremos paso a paso en tu viaje de seguridad vial en ${userLanguage.nativeName}.'
+          subtitle: `¡Hola ${currentUser?.username}! Estás empezando completamente desde cero.`,
+          description: 'Te guiaremos paso a paso en tu viaje de seguridad vial.'
         };
       default:
         return {
           title: 'Welcome to Road Safety 2.0! 🎉',
-          subtitle: `Hi ${username}! You're starting fresh with zero knowledge.`,
-          description: `We'll guide you step by step through your road safety journey in ${userLanguage?.nativeName}.`
+          subtitle: `Hi ${currentUser?.username}! You're starting fresh with zero knowledge.`,
+          description: `We'll guide you step by step through your road safety journey.`
         };
     }
   };
 
-  if (!userCountry || !userLanguage || !username) {
+  if (!currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <motion.div
@@ -274,7 +235,7 @@ const DashboardPage: React.FC = () => {
                   transition={{ delay: 0.2 }}
                   className="text-3xl font-bold text-white mb-1"
                 >
-                  Welcome, {username}! {userCountry.flag}
+                  Welcome back, {currentUser.username}! 👋
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0 }}
@@ -282,9 +243,9 @@ const DashboardPage: React.FC = () => {
                   transition={{ delay: 0.3 }}
                   className="text-slate-300"
                 >
-                  {userStats.completedSteps === 0 
-                    ? `🌟 Starting fresh in ${userLanguage.nativeName} - Let's learn together!`
-                    : `📚 Learning in ${userLanguage.nativeName} - ${userStats.completedSteps} steps completed!`
+                  {currentUser.lessonsCompleted === 0 
+                    ? `🌟 Starting fresh - Let's learn together!`
+                    : `📚 ${currentUser.lessonsCompleted} modules completed - Keep going!`
                   }
                 </motion.p>
               </div>
@@ -293,16 +254,17 @@ const DashboardPage: React.FC = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/login')}
-              className="p-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all duration-300"
+              onClick={handleLogout}
+              className="p-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
             >
-              <Settings className="w-5 h-5" />
+              <LogOut className="w-5 h-5" />
+              <span className="hidden sm:inline">Logout</span>
             </motion.button>
           </div>
         </motion.div>
 
         {/* Progress Banner */}
-        {userStats.completedSteps > 0 && (
+        {currentUser.lessonsCompleted > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -317,7 +279,7 @@ const DashboardPage: React.FC = () => {
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-white mb-1">Great Progress! 🚀</h3>
                   <p className="text-green-200">
-                    You've completed {userStats.completedSteps} learning steps and earned {userStats.totalPoints} points. 
+                    You've completed {currentUser.lessonsCompleted} modules and earned {currentUser.totalPoints} points. 
                     Keep going to unlock more features!
                   </p>
                 </div>
@@ -334,10 +296,10 @@ const DashboardPage: React.FC = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
         >
           {[
-            { icon: BookOpen, value: userStats.completedSteps, label: 'Steps Done', gradient: 'from-blue-500 to-cyan-500' },
-            { icon: Target, value: `${userStats.quizScore}%`, label: getTranslation(currentLang, 'ui', 'quizScore', 'Quiz Score'), gradient: 'from-green-500 to-emerald-500' },
-            { icon: Flame, value: userStats.streakDays, label: getTranslation(currentLang, 'ui', 'dayStreak', 'Day Streak'), gradient: 'from-orange-500 to-red-500' },
-            { icon: Trophy, value: userStats.totalPoints, label: getTranslation(currentLang, 'ui', 'totalPoints', 'Total Points'), gradient: 'from-purple-500 to-pink-500' }
+            { icon: BookOpen, value: currentUser.lessonsCompleted, label: 'Modules Done', gradient: 'from-blue-500 to-cyan-500' },
+            { icon: Target, value: `${currentUser.quizScore}%`, label: getTranslation(currentLang, 'ui', 'quizScore', 'Quiz Score'), gradient: 'from-green-500 to-emerald-500' },
+            { icon: Flame, value: currentUser.streakDays, label: getTranslation(currentLang, 'ui', 'dayStreak', 'Day Streak'), gradient: 'from-orange-500 to-red-500' },
+            { icon: Trophy, value: currentUser.totalPoints, label: getTranslation(currentLang, 'ui', 'totalPoints', 'Total Points'), gradient: 'from-purple-500 to-pink-500' }
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -436,6 +398,38 @@ const DashboardPage: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* User Info */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-6 h-6 text-blue-400" />
+                <h3 className="text-xl font-bold text-white">Profile</h3>
+              </div>
+              
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Username:</span>
+                  <span className="text-white font-medium">{currentUser.username}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Country:</span>
+                  <span className="text-white">{currentUser.country}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Language:</span>
+                  <span className="text-white">{currentUser.language}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Member since:</span>
+                  <span className="text-white">{new Date(currentUser.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Achievements */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -514,7 +508,7 @@ const DashboardPage: React.FC = () => {
                     <BookOpen className="w-4 h-4 text-white" />
                   </div>
                   <span className="font-medium">
-                    {userStats.completedSteps === 0 ? 'Start Learning' : 'Continue Learning'}
+                    {currentUser.lessonsCompleted === 0 ? 'Start Learning' : 'Continue Learning'}
                   </span>
                   <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
                 </motion.button>
@@ -523,25 +517,25 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.9 }}
-                  onClick={() => userStats.lessonsCompleted > 0 && navigate('/quiz')}
-                  disabled={userStats.lessonsCompleted === 0}
+                  onClick={() => currentUser.lessonsCompleted > 0 && navigate('/quiz')}
+                  disabled={currentUser.lessonsCompleted === 0}
                   className={`w-full flex items-center gap-3 p-4 border rounded-xl transition-all duration-300 ${
-                    userStats.lessonsCompleted > 0 
+                    currentUser.lessonsCompleted > 0 
                       ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-white cursor-pointer group'
                       : 'bg-white/5 border-white/10 text-slate-400 cursor-not-allowed opacity-50'
                   }`}
                 >
                   <div className={`p-2 rounded-lg ${
-                    userStats.lessonsCompleted > 0 
+                    currentUser.lessonsCompleted > 0 
                       ? 'bg-gradient-to-br from-green-500 to-emerald-500 group-hover:scale-110 transition-transform duration-300'
                       : 'bg-gradient-to-br from-gray-500 to-slate-500'
                   }`}>
                     <Brain className="w-4 h-4 text-white" />
                   </div>
                   <span className="font-medium">
-                    {userStats.lessonsCompleted > 0 ? 'Take Quiz' : 'Quiz (Complete lessons first)'}
+                    {currentUser.lessonsCompleted > 0 ? 'Take Quiz' : 'Quiz (Complete lessons first)'}
                   </span>
-                  {userStats.lessonsCompleted > 0 && (
+                  {currentUser.lessonsCompleted > 0 && (
                     <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
                   )}
                 </motion.button>
@@ -550,25 +544,25 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.0 }}
-                  onClick={() => userStats.lessonsCompleted >= 2 && navigate('/game')}
-                  disabled={userStats.lessonsCompleted < 2}
+                  onClick={() => currentUser.lessonsCompleted >= 2 && navigate('/game')}
+                  disabled={currentUser.lessonsCompleted < 2}
                   className={`w-full flex items-center gap-3 p-4 border rounded-xl transition-all duration-300 ${
-                    userStats.lessonsCompleted >= 2 
+                    currentUser.lessonsCompleted >= 2 
                       ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-white cursor-pointer group'
                       : 'bg-white/5 border-white/10 text-slate-400 cursor-not-allowed opacity-50'
                   }`}
                 >
                   <div className={`p-2 rounded-lg ${
-                    userStats.lessonsCompleted >= 2 
+                    currentUser.lessonsCompleted >= 2 
                       ? 'bg-gradient-to-br from-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-300'
                       : 'bg-gradient-to-br from-gray-500 to-slate-500'
                   }`}>
                     <Gamepad2 className="w-4 h-4 text-white" />
                   </div>
                   <span className="font-medium">
-                    {userStats.lessonsCompleted >= 2 ? 'Play Simulation' : 'Simulation (Complete 2 modules)'}
+                    {currentUser.lessonsCompleted >= 2 ? 'Play Simulation' : 'Simulation (Complete 2 modules)'}
                   </span>
-                  {userStats.lessonsCompleted >= 2 && (
+                  {currentUser.lessonsCompleted >= 2 && (
                     <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
                   )}
                 </motion.button>
