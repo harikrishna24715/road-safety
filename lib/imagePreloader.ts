@@ -100,31 +100,8 @@ export class ImagePreloader {
   }
 
   private async generateImageWithGemini(prompt: string): Promise<string | null> {
-    try {
-      // Note: Gemini's text-to-image generation would be used here
-      // For now, we'll simulate the process and return a placeholder
-      const result = await this.model.generateContent([
-        `Create a detailed description for generating this image: ${prompt}
-        
-        Return only a JSON object with this structure:
-        {
-          "description": "detailed image description",
-          "style": "educational illustration",
-          "quality": "high resolution"
-        }`
-      ]);
-      
-      const response = await result.response;
-      const text = response.text();
-      
-      // In a real implementation, this would generate an actual image
-      // For now, we'll return null to use fallback images
-      return null;
-      
-    } catch (error) {
-      console.error('Error generating image with Gemini:', error);
-      return null;
-    }
+    // Return null immediately to use fallback images and avoid API quota issues
+    return null;
   }
 
   private getFallbackImage(imageId: string): string {
