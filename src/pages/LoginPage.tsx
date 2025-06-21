@@ -134,7 +134,7 @@ const LoginPage: React.FC = () => {
           </motion.div>
           
           <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Road Safety Learning
+            Learn2Go
           </h1>
           <p className="text-slate-300 text-lg mb-8">
             Loading your personalized learning experience...
@@ -204,6 +204,14 @@ const LoginPage: React.FC = () => {
           >
             <Shield className="w-10 h-10 text-white" />
           </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
+          >
+            Learn2Go
+          </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
