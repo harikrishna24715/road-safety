@@ -10,6 +10,8 @@ import { replicateImageGenerator } from '../../lib/replicateImageGenerator';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
+  const [country, setCountry] = useState('');
+  const [language, setLanguage] = useState('English');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPreloadingImages, setIsPreloadingImages] = useState(true);
@@ -84,13 +86,13 @@ const LoginPage: React.FC = () => {
         // Store compatibility data
         localStorage.setItem('username', result.user.username);
         localStorage.setItem('selectedCountry', JSON.stringify({
-          name: result.user.country,
+          name: result.user.country || country || 'United States',
           flag: '🌍' // Default flag
         }));
         localStorage.setItem('selectedLanguage', JSON.stringify({
-          code: result.user.language,
-          name: result.user.language,
-          nativeName: result.user.language
+          code: result.user.language || language.toLowerCase() || 'en',
+          name: language || 'English',
+          nativeName: language || 'English'
         }));
         
         navigate('/dashboard');
@@ -109,6 +111,14 @@ const LoginPage: React.FC = () => {
     if (error) setError('');
   };
 
+  const handleCountryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCountry(e.target.value);
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLanguage(e.target.value);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleLogin();
@@ -118,7 +128,7 @@ const LoginPage: React.FC = () => {
   // Show image preloading screen
   if (isPreloadingImages) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-800 to-slate-900 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -181,7 +191,8 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-cover bg-center" 
+         style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -212,12 +223,11 @@ const LoginPage: React.FC = () => {
         >
           <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="flex items-center justify-center gap-3 text-white text-2xl">
-                <User className="w-6 h-6 text-blue-400" />
-                Login to Your Account
+              <CardTitle className="text-white text-3xl">
+                LOGIN
               </CardTitle>
               <CardDescription className="text-slate-300 text-base">
-                🔐 Enter your username to continue learning
+                Please fill in input fields before proceeding
               </CardDescription>
             </CardHeader>
             
@@ -251,15 +261,56 @@ const LoginPage: React.FC = () => {
                 />
               </div>
 
+              {/* Country Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
+                  Country
+                </label>
+                <motion.input
+                  whileFocus={{ scale: 1.02 }}
+                  type="text"
+                  value={country}
+                  onChange={handleCountryChange}
+                  placeholder="Select your country"
+                  className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
+                />
+              </div>
+
+              {/* Language Select */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-200 flex items-center gap-2">
+                  Language
+                </label>
+                <div className="flex items-center">
+                  <select
+                    value={language}
+                    onChange={handleLanguageChange}
+                    className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
+                  >
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Chinese">Chinese</option>
+                    <option value="Japanese">Japanese</option>
+                    <option value="Russian">Russian</option>
+                    <option value="Arabic">Arabic</option>
+                  </select>
+                  <span className="ml-2 text-white">▼</span>
+                </div>
+              </div>
+
               {/* Login Button */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                className="mt-6"
               >
                 <Button
                   onClick={handleLogin}
                   disabled={isLoading || !username.trim()}
-                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
+                  className="w-full p-4 text-lg font-semibold bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-full"
                   size="lg"
                 >
                   {isLoading ? (
@@ -268,55 +319,25 @@ const LoginPage: React.FC = () => {
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
                     />
-                  ) : (
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                  )}
+                  ) : null}
                   {isLoading ? 'Logging in...' : 'Login'}
                 </Button>
               </motion.div>
 
               {/* Register Link */}
-              <div className="text-center">
-                <p className="text-slate-400 text-sm">
-                  Don't have an account?{' '}
+              <div className="text-center mt-6">
+                <p className="text-white text-sm">
+                  Don't have an Account?{' '}
                   <Link 
                     to="/register" 
                     className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
                   >
-                    Create one here
+                    Sign up
                   </Link>
                 </p>
               </div>
-
-              {/* Quick Register Button */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  onClick={() => navigate('/register')}
-                  variant="outline"
-                  className="w-full p-4 text-lg font-semibold bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all duration-300 rounded-xl"
-                  size="lg"
-                >
-                  <UserPlus className="w-5 h-5 mr-2" />
-                  Create New Account
-                </Button>
-              </motion.div>
             </CardContent>
           </Card>
-        </motion.div>
-
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="text-center mt-8"
-        >
-          <p className="text-slate-400 text-sm">
-            🌟 Your progress is saved and will continue where you left off 🌟
-          </p>
         </motion.div>
       </motion.div>
     </div>
