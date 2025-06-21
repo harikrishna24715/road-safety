@@ -111,25 +111,25 @@ const DashboardPage: React.FC = () => {
     switch (currentLang) {
       case 'hi':
         return {
-          title: 'रोड सेफ्टी 2.0 में आपका स्वागत है! 🎉',
+          title: 'Learn2Go में आपका स्वागत है! 🎉',
           subtitle: `नमस्ते ${currentUser?.username}! आप बिल्कुल शुरुआत से शुरू कर रहे हैं।`,
           description: 'हम आपको सड़क सुरक्षा की यात्रा में कदम दर कदम मार्गदर्शन करेंगे।'
         };
       case 'te':
         return {
-          title: 'రోడ్ సేఫ్టీ 2.0కి స్వాగతం! 🎉',
+          title: 'Learn2Go కి స్వాగతం! 🎉',
           subtitle: `నమస్కారం ${currentUser?.username}! మీరు పూర్తిగా కొత్తగా ప్రారంభిస్తున్నారు।`,
           description: 'మేము మిమ్మల్ని రోడ్డు భద్రత ప్రయాణంలో అడుగు అడుగునా మార్గనిర్దేశనం చేస్తాము।'
         };
       case 'es':
         return {
-          title: '¡Bienvenido a Road Safety 2.0! 🎉',
+          title: '¡Bienvenido a Learn2Go! 🎉',
           subtitle: `¡Hola ${currentUser?.username}! Estás empezando completamente desde cero.`,
           description: 'Te guiaremos paso a paso en tu viaje de seguridad vial.'
         };
       default:
         return {
-          title: 'Welcome to Road Safety 2.0! 🎉',
+          title: 'Welcome to Learn2Go! 🎉',
           subtitle: `Hi ${currentUser?.username}! You're starting fresh with zero knowledge.`,
           description: `We'll guide you step by step through your road safety journey.`
         };
@@ -235,7 +235,7 @@ const DashboardPage: React.FC = () => {
                   transition={{ delay: 0.2 }}
                   className="text-3xl font-bold text-white mb-1"
                 >
-                  Welcome back, {currentUser.username}! 👋
+                  Welcome to Learn2Go, {currentUser.username}! 👋
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0 }}
