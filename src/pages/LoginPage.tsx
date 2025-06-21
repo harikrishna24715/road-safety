@@ -128,7 +128,7 @@ const LoginPage: React.FC = () => {
   // Show image preloading screen
   if (isPreloadingImages) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM.png')"}}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
