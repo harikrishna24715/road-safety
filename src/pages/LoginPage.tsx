@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, User, AlertCircle, CheckCircle, UserPlus, Loader, Sparkles } from 'lucide-react';
+import { User, AlertCircle, CheckCircle, UserPlus, Loader } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { userManager } from '../../lib/userManager';
@@ -14,7 +14,6 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPreloadingImages, setIsPreloadingImages] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
-  const [preloadStatus, setPreloadStatus] = useState('Initializing...');
 
   useEffect(() => {
     // Migrate old user data if exists
@@ -35,7 +34,6 @@ const LoginPage: React.FC = () => {
     try {
       setIsPreloadingImages(true);
       setPreloadProgress(0);
-      setPreloadStatus('Loading custom educational images...');
       
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
@@ -44,27 +42,22 @@ const LoginPage: React.FC = () => {
             clearInterval(progressInterval);
             return prev;
           }
-          return prev + 20;
+          return prev + 10;
         });
-      }, 500);
+      }, 200);
 
       await replicateImageGenerator.preloadAllImages();
       
       clearInterval(progressInterval);
       setPreloadProgress(100);
-      setPreloadStatus('Images ready!');
       
       setTimeout(() => {
         setIsPreloadingImages(false);
-      }, 1000);
+      }, 500);
       
     } catch (error) {
       console.error('Error preloading images:', error);
-      setPreloadStatus('Images loaded successfully!');
-      setPreloadProgress(100);
-      setTimeout(() => {
-        setIsPreloadingImages(false);
-      }, 1000);
+      setIsPreloadingImages(false);
     }
   };
 
@@ -115,7 +108,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // Show image preloading screen
+  // Show loading screen
   if (isPreloadingImages) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -124,25 +117,9 @@ const LoginPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
-          >
-            <Shield className="w-10 h-10 text-white" />
-          </motion.div>
-          
-          <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Road Safety Learning
-          </h1>
-          <p className="text-slate-300 text-lg mb-8">
-            Loading your personalized learning experience...
-          </p>
-          
-          <div className="w-80 mx-auto">
+          <div className="w-64 mx-auto">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">{preloadStatus}</span>
+              <span className="text-sm text-slate-400">Loading Images</span>
               <span className="text-sm text-slate-400">{preloadProgress}%</span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
@@ -156,73 +133,22 @@ const LoginPage: React.FC = () => {
           </div>
           
           <div className="mt-6 flex items-center justify-center gap-2 text-slate-400">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              <Sparkles className="w-4 h-4" />
-            </motion.div>
-            <span className="text-sm">
-              {preloadProgress < 50 ? 'Loading custom educational images...' : 
-               preloadProgress < 90 ? 'Almost ready...' : 
-               'Finalizing setup...'}
-            </span>
+            <Loader className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Optimizing for better performance...</span>
           </div>
-          
-          {preloadProgress > 0 && preloadProgress < 100 && (
-            <div className="mt-4 text-xs text-slate-500">
-              ✨ Using high-quality custom images for better learning
-            </div>
-          )}
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center"
-      style={{ 
-        backgroundImage: `url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
-          >
-            <Shield className="w-10 h-10 text-white" />
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
-          >
-            Road Safety Learning
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-slate-300 text-lg"
-          >
-            Welcome back! Continue your learning journey
-          </motion.p>
-        </div>
-
-        {/* Login Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
