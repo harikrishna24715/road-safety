@@ -134,7 +134,7 @@ const LoginPage: React.FC = () => {
           </motion.div>
           
           <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Learn2Go
+            Road Safety Learning
           </h1>
           <p className="text-slate-300 text-lg mb-8">
             Loading your personalized learning experience...
@@ -210,7 +210,7 @@ const LoginPage: React.FC = () => {
             transition={{ delay: 0.4 }}
             className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
           >
-            Learn2Go
+            Road Safety Learning
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
