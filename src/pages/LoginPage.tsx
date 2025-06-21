@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, AlertCircle, CheckCircle, UserPlus, Loader } from 'lucide-react';
+import { User, AlertCircle, CheckCircle, UserPlus, Loader, Shield } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { userManager } from '../../lib/userManager';
@@ -271,6 +271,17 @@ const LoginPage: React.FC = () => {
                   Create New Account
                 </Button>
               </motion.div>
+              
+              {/* Admin Link */}
+              <div className="text-center pt-2">
+                <Link 
+                  to="/admin" 
+                  className="text-slate-400 text-xs hover:text-slate-300 transition-colors flex items-center justify-center gap-1"
+                >
+                  <Shield className="w-3 h-3" />
+                  Admin Access
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

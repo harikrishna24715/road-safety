@@ -129,9 +129,14 @@ export class UserManager {
   }
 
   // Get all users (for admin purposes)
-  private getAllUsers(): Record<string, UserProfile> {
+  getAllUsers(): Record<string, UserProfile> {
     const users = localStorage.getItem(this.USERS_KEY);
     return users ? JSON.parse(users) : {};
+  }
+  
+  // Get all users for admin dashboard
+  getAllUsersForAdmin(): Record<string, UserProfile> {
+    return this.getAllUsers();
   }
 
   // Logout current user
