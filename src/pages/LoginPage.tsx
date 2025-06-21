@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, User, AlertCircle, CheckCircle, UserPlus, Loader, Sparkles } from 'lucide-react';
+import { User, AlertCircle, CheckCircle, UserPlus, Loader, Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { userManager } from '../../lib/userManager';
@@ -130,7 +130,7 @@ const LoginPage: React.FC = () => {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
           >
-            <Shield className="w-10 h-10 text-white" />
+            <Sparkles className="w-10 h-10 text-white" />
           </motion.div>
           
           <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -194,34 +194,6 @@ const LoginPage: React.FC = () => {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
-          >
-            <Shield className="w-10 h-10 text-white" />
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
-          >
-            Learn2Go
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-slate-300 text-lg"
-          >
-            Welcome back! Continue your learning journey
-          </motion.p>
-        </div>
-
         {/* Login Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
