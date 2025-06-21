@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 interface ImageGenerationRequest {
   topic: string;
   description: string;
@@ -23,10 +25,10 @@ export class ReplicateImageGenerator {
     'traffic-signals-lesson': '/WhatsApp Image 2025-06-21 at 15.07.15_1cb2c828.jpg',
     'traffic-signals-puzzle': '/WhatsApp Image 2025-06-21 at 15.07.15_700f4f23.jpg',
     'traffic-signals-game': '/WhatsApp Image 2025-06-21 at 15.07.14_4eb4fd33.jpg',
-    'pedestrian-safety-main': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg', // Using intersection image
-    'pedestrian-safety-lesson': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg', // Using intersection image
-    'pedestrian-safety-puzzle': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg', // Using intersection image
-    'pedestrian-safety-game': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg' // Using intersection image
+    'pedestrian-safety-main': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg',
+    'pedestrian-safety-lesson': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg',
+    'pedestrian-safety-puzzle': '/WhatsApp Image 2025-06-21 at 15.07.15_700f4f23.jpg',
+    'pedestrian-safety-game': '/WhatsApp Image 2025-06-21 at 15.07.14_4eb4fd33.jpg'
   };
 
   // Generate images using Replicate's FLUX model
