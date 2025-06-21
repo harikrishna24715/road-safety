@@ -167,7 +167,7 @@ const LoginPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/ChatGPT Image Jun 21, 2025, 03_33_49 PM copy.png" 
+            src="/Hari.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />
