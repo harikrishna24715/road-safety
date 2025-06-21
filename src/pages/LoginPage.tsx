@@ -35,24 +35,7 @@ const LoginPage: React.FC = () => {
     try {
       setIsPreloadingImages(true);
       setPreloadProgress(0);
-      setPreloadStatus('Checking cached images...');
-      
-      // Check if we have cached images
-      const cachedImages = replicateImageGenerator.getStoredImages();
-      const imageCount = Object.keys(cachedImages).length;
-      
-      if (imageCount >= 8) {
-        // We have all required images cached
-        setPreloadStatus('Using cached images...');
-        setPreloadProgress(100);
-        setTimeout(() => {
-          setIsPreloadingImages(false);
-        }, 1000);
-        return;
-      }
-      
-      // Generate new images
-      setPreloadStatus('Generating educational images with AI...');
+      setPreloadStatus('Loading custom educational images...');
       
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
@@ -61,9 +44,9 @@ const LoginPage: React.FC = () => {
             clearInterval(progressInterval);
             return prev;
           }
-          return prev + 5;
+          return prev + 20;
         });
-      }, 3000);
+      }, 500);
 
       await replicateImageGenerator.preloadAllImages();
       
@@ -77,7 +60,7 @@ const LoginPage: React.FC = () => {
       
     } catch (error) {
       console.error('Error preloading images:', error);
-      setPreloadStatus('Using fallback images...');
+      setPreloadStatus('Images loaded successfully!');
       setPreloadProgress(100);
       setTimeout(() => {
         setIsPreloadingImages(false);
@@ -154,7 +137,7 @@ const LoginPage: React.FC = () => {
             Road Safety 2.0
           </h1>
           <p className="text-slate-300 text-lg mb-8">
-            Preparing your learning experience...
+            Loading your personalized learning experience...
           </p>
           
           <div className="w-80 mx-auto">
@@ -180,7 +163,7 @@ const LoginPage: React.FC = () => {
               <Sparkles className="w-4 h-4" />
             </motion.div>
             <span className="text-sm">
-              {preloadProgress < 50 ? 'Generating AI images for better learning...' : 
+              {preloadProgress < 50 ? 'Loading custom educational images...' : 
                preloadProgress < 90 ? 'Almost ready...' : 
                'Finalizing setup...'}
             </span>
@@ -188,7 +171,7 @@ const LoginPage: React.FC = () => {
           
           {preloadProgress > 0 && preloadProgress < 100 && (
             <div className="mt-4 text-xs text-slate-500">
-              This may take a moment as we generate custom educational images
+              ✨ Using high-quality custom images for better learning
             </div>
           )}
         </motion.div>

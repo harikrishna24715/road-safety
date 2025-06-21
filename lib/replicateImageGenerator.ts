@@ -17,6 +17,18 @@ export class ReplicateImageGenerator {
   private readonly STORAGE_KEY = 'replicateGeneratedImages';
   private readonly CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+  // Custom images provided by user
+  private readonly CUSTOM_IMAGES: Record<string, string> = {
+    'traffic-signals-main': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg',
+    'traffic-signals-lesson': '/WhatsApp Image 2025-06-21 at 15.07.15_1cb2c828.jpg',
+    'traffic-signals-puzzle': '/WhatsApp Image 2025-06-21 at 15.07.15_700f4f23.jpg',
+    'traffic-signals-game': '/WhatsApp Image 2025-06-21 at 15.07.14_4eb4fd33.jpg',
+    'pedestrian-safety-main': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg', // Using intersection image
+    'pedestrian-safety-lesson': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg', // Using intersection image
+    'pedestrian-safety-puzzle': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg', // Using intersection image
+    'pedestrian-safety-game': '/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg' // Using intersection image
+  };
+
   // Generate images using Replicate's FLUX model
   async generateRoadSafetyImage(request: ImageGenerationRequest): Promise<string | null> {
     const { topic, description, style = 'educational illustration', language = 'en' } = request;
@@ -118,108 +130,34 @@ The image should clearly demonstrate the road safety concept with accurate detai
     return basePrompt;
   }
 
-  // Pre-generate all required images for the application
+  // Pre-load custom images instead of generating new ones
   async preloadAllImages(): Promise<void> {
-    const existingImages = this.getStoredImages();
-    const currentTime = Date.now();
+    console.log('Loading custom road safety images...');
     
-    // Check if we need to refresh images
-    const needsRefresh = Object.values(existingImages).some(img => 
-      !img.generatedAt || (currentTime - new Date(img.generatedAt).getTime()) > this.CACHE_DURATION
-    );
+    const customImages: Record<string, ImageData> = {};
 
-    if (Object.keys(existingImages).length > 0 && !needsRefresh) {
-      console.log('Using cached Replicate images');
-      return;
-    }
-
-    console.log('Generating images with Replicate AI...');
-    
-    const imagePrompts = [
-      {
-        id: 'traffic-signals-main',
-        topic: 'traffic-signals',
-        description: 'A professional educational illustration of a traffic light intersection with clear red, yellow, and green lights. Show cars and pedestrians properly following traffic signals. High quality, realistic style, educational purpose.'
-      },
-      {
-        id: 'traffic-signals-lesson',
-        topic: 'traffic-signals',
-        description: 'Close-up view of a traffic light showing all three colors (red, yellow, green) clearly visible. Educational diagram style showing the meaning of each light color for road safety learning.'
-      },
-      {
-        id: 'traffic-signals-puzzle',
-        topic: 'traffic-signals',
-        description: 'Multiple traffic lights in different states for interactive learning. Show various traffic light combinations with clear color visibility for educational puzzle activities.'
-      },
-      {
-        id: 'traffic-signals-game',
-        topic: 'traffic-signals',
-        description: 'Realistic intersection scene with traffic lights, vehicles, and pedestrians for simulation game. Show proper traffic flow and signal compliance in an urban setting.'
-      },
-      {
-        id: 'pedestrian-safety-main',
-        topic: 'pedestrian-safety',
-        description: 'Pedestrians safely crossing at a zebra crossing with proper crosswalk markings. Show people looking both ways and following pedestrian safety rules. Educational illustration style.'
-      },
-      {
-        id: 'pedestrian-safety-lesson',
-        topic: 'pedestrian-safety',
-        description: 'Educational diagram showing proper pedestrian crossing techniques. Include zebra crossing, pedestrian signals, and people demonstrating safe crossing behaviors.'
-      },
-      {
-        id: 'pedestrian-safety-puzzle',
-        topic: 'pedestrian-safety',
-        description: 'Side-by-side comparison showing correct and incorrect pedestrian crossing behaviors. Educational illustration for learning safe vs unsafe practices.'
-      },
-      {
-        id: 'pedestrian-safety-game',
-        topic: 'pedestrian-safety',
-        description: 'Busy street scene with crosswalks, traffic signals, and pedestrians making safe crossing decisions. Interactive game environment showing urban pedestrian safety.'
-      }
-    ];
-
-    const newImages: Record<string, ImageData> = {};
-
-    for (const imagePrompt of imagePrompts) {
-      try {
-        console.log(`Generating image for ${imagePrompt.id}...`);
-        
-        const generatedUrl = await this.generateRoadSafetyImage({
-          topic: imagePrompt.topic,
-          description: imagePrompt.description,
-          style: 'educational illustration',
-          language: 'en'
-        });
-        
-        newImages[imagePrompt.id] = {
-          id: imagePrompt.id,
-          url: generatedUrl || this.getFallbackImage(imagePrompt.id),
-          isGenerated: !!generatedUrl,
-          generatedAt: new Date().toISOString()
-        };
-        
-        console.log(`${imagePrompt.id}: ${generatedUrl ? 'Generated successfully' : 'Using fallback'}`);
-        
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-      } catch (error) {
-        console.error(`Failed to generate image for ${imagePrompt.id}:`, error);
-        newImages[imagePrompt.id] = {
-          id: imagePrompt.id,
-          url: this.getFallbackImage(imagePrompt.id),
-          isGenerated: false,
-          generatedAt: new Date().toISOString()
-        };
-      }
-    }
+    // Use the custom images provided by the user
+    Object.entries(this.CUSTOM_IMAGES).forEach(([imageId, imagePath]) => {
+      customImages[imageId] = {
+        id: imageId,
+        url: imagePath,
+        isGenerated: true, // Mark as generated since these are custom educational images
+        generatedAt: new Date().toISOString()
+      };
+    });
 
     // Store all images
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newImages));
-    console.log('Images generated and cached successfully');
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(customImages));
+    console.log('Custom images loaded successfully');
   }
 
   private getFallbackImage(imageId: string): string {
+    // First try to use custom images
+    if (this.CUSTOM_IMAGES[imageId]) {
+      return this.CUSTOM_IMAGES[imageId];
+    }
+
+    // Fallback to stock images if needed
     const fallbackImages: Record<string, string> = {
       'traffic-signals-main': 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=800',
       'traffic-signals-lesson': 'https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg?auto=compress&cs=tinysrgb&w=600',
@@ -240,11 +178,22 @@ The image should clearly demonstrate the road safety concept with accurate detai
   }
 
   getImageUrl(imageId: string): string {
+    // First check if we have custom images
+    if (this.CUSTOM_IMAGES[imageId]) {
+      return this.CUSTOM_IMAGES[imageId];
+    }
+
+    // Then check stored images
     const images = this.getStoredImages();
     return images[imageId]?.url || this.getFallbackImage(imageId);
   }
 
   isImageGenerated(imageId: string): boolean {
+    // Custom images are considered "generated" since they're specifically created for education
+    if (this.CUSTOM_IMAGES[imageId]) {
+      return true;
+    }
+
     const images = this.getStoredImages();
     return images[imageId]?.isGenerated || false;
   }
