@@ -145,7 +145,7 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg')",
+        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat"
