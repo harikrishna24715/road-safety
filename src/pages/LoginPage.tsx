@@ -161,6 +161,18 @@ const LoginPage: React.FC = () => {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md relative z-10"
       >
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <motion.img 
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, type: "spring" }}
+            src="/ChatGPT Image Jun 21, 2025, 03_33_49 PM copy.png" 
+            alt="Learn2Go Logo" 
+            className="w-64 h-auto"
+          />
+        </div>
+        
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
