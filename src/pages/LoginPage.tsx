@@ -141,7 +141,7 @@ const LoginPage: React.FC = () => {
             className="inline-flex items-center justify-center mb-6"
           >
             <img 
-              src="/ChatGPT Image Jun 21, 2025, 03_51_55 PM.png" 
+              src="/ChatGPT Image Jun 21, 2025, 04_01_07 PM.png" 
               alt="Learn2Go Logo" 
               className="w-64 h-auto"
             />
@@ -192,7 +192,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-cover bg-center" 
-         style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
+         style={{backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM.png')"}}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -208,7 +208,7 @@ const LoginPage: React.FC = () => {
             className="inline-flex items-center justify-center mb-6"
           >
             <img 
-              src="/ChatGPT Image Jun 21, 2025, 03_51_55 PM.png" 
+              src="/ChatGPT Image Jun 21, 2025, 04_01_07 PM.png" 
               alt="Learn2Go Logo" 
               className="w-64 h-auto"
             />
