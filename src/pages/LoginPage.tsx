@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
   // Show image preloading screen
   if (isPreloadingImages) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-800 to-slate-900 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -128,14 +128,15 @@ const LoginPage: React.FC = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
+            className="inline-flex items-center justify-center mb-6"
           >
-            <Shield className="w-10 h-10 text-white" />
+            <img 
+              src="/ChatGPT Image Jun 21, 2025, 03_51_55 PM.png" 
+              alt="Learn2Go Logo" 
+              className="w-64 h-auto"
+            />
           </motion.div>
           
-          <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Learn2Go
-          </h1>
           <p className="text-slate-300 text-lg mb-8">
             Loading your personalized learning experience...
           </p>
@@ -149,7 +150,7 @@ const LoginPage: React.FC = () => {
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${preloadProgress}%` }}
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full"
                 transition={{ duration: 0.3 }}
               />
             </div>
@@ -180,7 +181,7 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -193,26 +194,14 @@ const LoginPage: React.FC = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-2xl"
+            className="inline-flex items-center justify-center mb-6"
           >
-            <Shield className="w-10 h-10 text-white" />
+            <img 
+              src="/ChatGPT Image Jun 21, 2025, 03_51_55 PM.png" 
+              alt="Learn2Go Logo" 
+              className="w-64 h-auto"
+            />
           </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
-          >
-            Learn2Go
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-slate-300 text-lg"
-          >
-            Welcome back! Continue your learning journey
-          </motion.p>
         </div>
 
         {/* Login Card */}
@@ -270,7 +259,7 @@ const LoginPage: React.FC = () => {
                 <Button
                   onClick={handleLogin}
                   disabled={isLoading || !username.trim()}
-                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
+                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
                   size="lg"
                 >
                   {isLoading ? (
