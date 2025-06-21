@@ -155,7 +155,7 @@ const RegisterPage: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -189,7 +189,7 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style={{backgroundImage: "url('https://images.pexels.com/photos/1252812/pexels-photo-1252812.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"}}>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -202,14 +202,26 @@ const RegisterPage: React.FC = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center mb-6"
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-6 shadow-2xl"
           >
-            <img 
-              src="/ChatGPT Image Jun 21, 2025, 03_51_55 PM.png" 
-              alt="Learn2Go Logo" 
-              className="w-64 h-auto"
-            />
+            <UserPlus className="w-10 h-10 text-white" />
           </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"
+          >
+            Create Account
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-slate-300 text-lg"
+          >
+            Join Road Safety 2.0 and start your learning journey
+          </motion.p>
         </div>
 
         {/* Registration Card */}
@@ -404,7 +416,7 @@ const RegisterPage: React.FC = () => {
                 <Button
                   onClick={handleRegister}
                   disabled={isLoading || !usernameAvailable || !selectedCountry || !selectedLanguage}
-                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
+                  className="w-full p-4 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:hover:scale-100 rounded-xl"
                   size="lg"
                 >
                   {isLoading ? (
