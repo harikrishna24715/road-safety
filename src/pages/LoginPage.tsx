@@ -145,13 +145,16 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy.png')",
+        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy copy.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed"
       }}
     >
-      <div className="absolute inset-0 bg-black/40"></div>
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-black/30"></div>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
