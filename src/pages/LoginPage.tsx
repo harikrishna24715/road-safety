@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, AlertCircle, CheckCircle, UserPlus, Loader, Shield } from 'lucide-react';
+import { User, AlertCircle, CheckCircle, UserPlus, Loader } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { userManager } from '../../lib/userManager';
 import { replicateImageGenerator } from '../../lib/replicateImageGenerator';
+import { supabase, logUserActivity } from '../../lib/supabase';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -71,6 +72,12 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
+      // Special case for admin access
+      if (username.trim().toLowerCase() === 'hari') {
+        navigate('/admin');
+        return;
+      }
+
       const result = userManager.loginUser(username.trim());
       
       if (result.success && result.user) {
@@ -85,6 +92,12 @@ const LoginPage: React.FC = () => {
           name: result.user.language,
           nativeName: result.user.language
         }));
+        
+        // Log user login activity to Supabase
+        await logUserActivity('login', {
+          username: result.user.username,
+          timestamp: new Date().toISOString()
+        });
         
         navigate('/dashboard');
       } else {
@@ -271,17 +284,6 @@ const LoginPage: React.FC = () => {
                   Create New Account
                 </Button>
               </motion.div>
-              
-              {/* Admin Link */}
-              <div className="text-center pt-2">
-                <Link 
-                  to="/admin" 
-                  className="text-slate-400 text-xs hover:text-slate-300 transition-colors flex items-center justify-center gap-1"
-                >
-                  <Shield className="w-3 h-3" />
-                  Admin Access
-                </Link>
-              </div>
             </CardContent>
           </Card>
         </motion.div>

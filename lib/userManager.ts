@@ -1,3 +1,5 @@
+import { supabase, logUserActivity } from './supabase';
+
 export interface UserProfile {
   username: string;
   email?: string;
@@ -17,14 +19,15 @@ export interface UserProfile {
 export class UserManager {
   private readonly USERS_KEY = 'registeredUsers';
   private readonly CURRENT_USER_KEY = 'currentUser';
+  private readonly ACTIVE_SESSIONS = 'activeSessions';
 
   // Register a new user
-  registerUser(userData: {
+  async registerUser(userData: {
     username: string;
     email?: string;
     country: string;
     language: string;
-  }): { success: boolean; message: string } {
+  }): Promise<{ success: boolean; message: string }> {
     const users = this.getAllUsers();
     
     // Check if username already exists
@@ -49,15 +52,50 @@ export class UserManager {
       currentLevel: 0
     };
 
-    // Save user
+    // Save user locally
     users[userData.username.toLowerCase()] = newUser;
     localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+
+    // Try to save to Supabase
+    try {
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          username: userData.username,
+          email: userData.email || null,
+          country: userData.country,
+          language: userData.language,
+          created_at: newUser.createdAt,
+          last_login_at: newUser.lastLoginAt,
+          total_points: 0,
+          streak_days: 0,
+          lessons_completed: 0,
+          quiz_score: 0,
+          learning_progress: {},
+          achievements: ['welcome-aboard'],
+          current_level: 0
+        });
+      
+      if (error) {
+        console.log('Error saving user to Supabase:', error.message);
+      } else {
+        // Log registration activity
+        await logUserActivity('registration', {
+          username: userData.username,
+          country: userData.country,
+          language: userData.language,
+          timestamp: newUser.createdAt
+        });
+      }
+    } catch (err) {
+      console.log('Error saving user to Supabase');
+    }
 
     return { success: true, message: 'Account created successfully!' };
   }
 
   // Login user
-  loginUser(username: string): { success: boolean; message: string; user?: UserProfile } {
+  async loginUser(username: string): Promise<{ success: boolean; message: string; user?: UserProfile }> {
     const users = this.getAllUsers();
     const user = users[username.toLowerCase()];
 
@@ -73,6 +111,35 @@ export class UserManager {
     // Set as current user
     localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
 
+    // Add to active sessions
+    const activeSessions = JSON.parse(localStorage.getItem(this.ACTIVE_SESSIONS) || '{}');
+    const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+    activeSessions[sessionId] = {
+      username: user.username,
+      startedAt: new Date().toISOString()
+    };
+    localStorage.setItem(this.ACTIVE_SESSIONS, JSON.stringify(activeSessions));
+
+    // Try to update in Supabase
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ last_login_at: user.lastLoginAt })
+        .eq('username', username.toLowerCase());
+      
+      if (error) {
+        console.log('Error updating last login in Supabase:', error.message);
+      } else {
+        // Log login activity
+        await logUserActivity('login', {
+          username: user.username,
+          timestamp: user.lastLoginAt
+        });
+      }
+    } catch (err) {
+      console.log('Error updating last login in Supabase');
+    }
+
     return { success: true, message: 'Login successful!', user };
   }
 
@@ -83,7 +150,7 @@ export class UserManager {
   }
 
   // Update user progress
-  updateUserProgress(updates: Partial<UserProfile>): void {
+  async updateUserProgress(updates: Partial<UserProfile>): Promise<void> {
     const currentUser = this.getCurrentUser();
     if (!currentUser) return;
 
@@ -96,10 +163,39 @@ export class UserManager {
 
     // Update current user
     localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
+
+    // Try to update in Supabase
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          total_points: updatedUser.totalPoints,
+          streak_days: updatedUser.streakDays,
+          lessons_completed: updatedUser.lessonsCompleted,
+          quiz_score: updatedUser.quizScore,
+          learning_progress: updatedUser.learningProgress,
+          achievements: updatedUser.achievements,
+          current_level: updatedUser.currentLevel
+        })
+        .eq('username', currentUser.username.toLowerCase());
+      
+      if (error) {
+        console.log('Error updating user progress in Supabase:', error.message);
+      } else {
+        // Log progress update activity
+        await logUserActivity('progress_update', {
+          username: currentUser.username,
+          updates: Object.keys(updates),
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.log('Error updating user progress in Supabase');
+    }
   }
 
   // Update learning progress
-  updateLearningProgress(moduleId: string, stepId: string, completed: boolean): void {
+  async updateLearningProgress(moduleId: string, stepId: string, completed: boolean): Promise<void> {
     const currentUser = this.getCurrentUser();
     if (!currentUser) return;
 
@@ -115,10 +211,19 @@ export class UserManager {
       totalCompleted += Object.values(module).filter(Boolean).length;
     });
 
-    this.updateUserProgress({
+    await this.updateUserProgress({
       learningProgress: currentUser.learningProgress,
       lessonsCompleted: Math.floor(totalCompleted / 3), // Each module has 3 steps
       totalPoints: currentUser.totalPoints + (completed ? 100 : 0)
+    });
+
+    // Log learning progress activity
+    await logUserActivity('learning_progress', {
+      username: currentUser.username,
+      moduleId,
+      stepId,
+      completed,
+      timestamp: new Date().toISOString()
     });
   }
 
@@ -139,9 +244,35 @@ export class UserManager {
     return this.getAllUsers();
   }
 
+  // Get active sessions
+  getActiveSessions(): Record<string, { username: string; startedAt: string }> {
+    const sessions = localStorage.getItem(this.ACTIVE_SESSIONS);
+    return sessions ? JSON.parse(sessions) : {};
+  }
+
   // Logout current user
-  logout(): void {
+  async logout(): Promise<void> {
+    const currentUser = this.getCurrentUser();
+    if (currentUser) {
+      // Log logout activity
+      await logUserActivity('logout', {
+        username: currentUser.username,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     localStorage.removeItem(this.CURRENT_USER_KEY);
+    
+    // Remove from active sessions
+    const activeSessions = this.getActiveSessions();
+    const sessionId = Object.keys(activeSessions).find(
+      id => activeSessions[id].username === currentUser?.username
+    );
+    
+    if (sessionId) {
+      delete activeSessions[sessionId];
+      localStorage.setItem(this.ACTIVE_SESSIONS, JSON.stringify(activeSessions));
+    }
   }
 
   // Get user statistics
@@ -182,27 +313,127 @@ export class UserManager {
       const learningProgress = oldLearningProgress ? JSON.parse(oldLearningProgress) : {};
 
       // Register the old user
-      const registrationResult = this.registerUser({
+      this.registerUser({
         username: oldUsername,
         country: country.name,
         language: language.code
       });
 
-      if (registrationResult.success) {
-        // Update with old progress
-        this.updateUserProgress({
-          totalPoints: progress.totalPoints || 0,
-          streakDays: progress.streakDays || 0,
-          lessonsCompleted: progress.lessonsCompleted || 0,
-          quizScore: progress.quizScore || 0,
-          learningProgress: learningProgress
-        });
+      // Update with old progress
+      this.updateUserProgress({
+        totalPoints: progress.totalPoints || 0,
+        streakDays: progress.streakDays || 0,
+        lessonsCompleted: progress.lessonsCompleted || 0,
+        quizScore: progress.quizScore || 0,
+        learningProgress: learningProgress
+      });
 
-        // Login the migrated user
-        this.loginUser(oldUsername);
+      // Login the migrated user
+      this.loginUser(oldUsername);
 
-        console.log('Successfully migrated old user data');
+      console.log('Successfully migrated old user data');
+    }
+  }
+
+  // Sync with Supabase
+  async syncWithSupabase(): Promise<void> {
+    try {
+      // Get all local users
+      const localUsers = this.getAllUsers();
+      
+      // Get all Supabase users
+      const { data: supabaseUsers, error } = await supabase
+        .from('users')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching users from Supabase:', error);
+        return;
       }
+      
+      // Sync Supabase users to local
+      if (supabaseUsers) {
+        for (const user of supabaseUsers) {
+          const localUser = localUsers[user.username.toLowerCase()];
+          
+          // If user exists locally, merge data (prefer newer data)
+          if (localUser) {
+            const localLastUpdated = new Date(localUser.lastLoginAt).getTime();
+            const supabaseLastUpdated = new Date(user.last_login_at).getTime();
+            
+            // If Supabase data is newer, update local
+            if (supabaseLastUpdated > localLastUpdated) {
+              localUsers[user.username.toLowerCase()] = {
+                ...localUser,
+                lastLoginAt: user.last_login_at,
+                totalPoints: user.total_points,
+                streakDays: user.streak_days,
+                lessonsCompleted: user.lessons_completed,
+                quizScore: user.quiz_score,
+                learningProgress: user.learning_progress || {},
+                achievements: user.achievements || [],
+                currentLevel: user.current_level
+              };
+            }
+          } 
+          // If user doesn't exist locally, add it
+          else {
+            localUsers[user.username.toLowerCase()] = {
+              username: user.username,
+              email: user.email,
+              country: user.country,
+              language: user.language,
+              createdAt: user.created_at,
+              lastLoginAt: user.last_login_at,
+              totalPoints: user.total_points,
+              streakDays: user.streak_days,
+              lessonsCompleted: user.lessons_completed,
+              quizScore: user.quiz_score,
+              learningProgress: user.learning_progress || {},
+              achievements: user.achievements || [],
+              currentLevel: user.current_level
+            };
+          }
+        }
+        
+        // Save updated local users
+        localStorage.setItem(this.USERS_KEY, JSON.stringify(localUsers));
+      }
+      
+      // Sync local users to Supabase
+      for (const username in localUsers) {
+        const localUser = localUsers[username];
+        const supabaseUser = supabaseUsers?.find(u => u.username.toLowerCase() === username);
+        
+        // If user doesn't exist in Supabase or local data is newer, update Supabase
+        if (!supabaseUser || new Date(localUser.lastLoginAt) > new Date(supabaseUser.last_login_at)) {
+          const { error } = await supabase
+            .from('users')
+            .upsert({
+              username: localUser.username,
+              email: localUser.email || null,
+              country: localUser.country,
+              language: localUser.language,
+              created_at: localUser.createdAt,
+              last_login_at: localUser.lastLoginAt,
+              total_points: localUser.totalPoints,
+              streak_days: localUser.streakDays,
+              lessons_completed: localUser.lessonsCompleted,
+              quiz_score: localUser.quizScore,
+              learning_progress: localUser.learningProgress,
+              achievements: localUser.achievements,
+              current_level: localUser.currentLevel
+            });
+          
+          if (error) {
+            console.error(`Error syncing user ${username} to Supabase:`, error);
+          }
+        }
+      }
+      
+      console.log('Sync with Supabase completed');
+    } catch (err) {
+      console.error('Error syncing with Supabase:', err);
     }
   }
 }

@@ -56,3 +56,42 @@ export const getProgress = async (language: string) => {
     return 0;
   }
 };
+
+// User activity tracking
+export const logUserActivity = async (activity: string, details?: Record<string, any>) => {
+  const userId = getUserId();
+  try {
+    const { error } = await supabase
+      .from('user_activities')
+      .insert({
+        user_id: userId,
+        activity_type: activity,
+        details: details || {},
+        created_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.log('Activity tracking unavailable:', error.message);
+    }
+  } catch (err) {
+    console.log('Activity tracking unavailable');
+  }
+};
+
+// Get user activities
+export const getUserActivities = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_activities')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    return [];
+  }
+};

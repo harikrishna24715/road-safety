@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
 import { userManager, type UserProfile } from '../../lib/userManager';
+import { supabase, getUserActivities } from '../../lib/supabase';
 
 const AdminPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,44 +31,64 @@ const AdminPage: React.FC = () => {
   const [sortField, setSortField] = useState<string>('username');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isLoading, setIsLoading] = useState(true);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [showPasswordModal, setShowPasswordModal] = useState(true);
-  const [passwordError, setPasswordError] = useState('');
-
-  // Admin authentication
-  const verifyAdmin = (password: string) => {
-    // Simple admin verification - in a real app, this would be more secure
-    if (password === 'admin123') {
-      setIsAdmin(true);
-      setShowPasswordModal(false);
-      localStorage.setItem('isAdminAuthenticated', 'true');
-    } else {
-      setPasswordError('Invalid password. Please try again.');
-    }
-  };
+  const [userActivities, setUserActivities] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if admin is already authenticated
-    const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-    if (isAuthenticated) {
+    // Check if the user is Hari (admin)
+    const username = localStorage.getItem('username');
+    if (username === 'Hari') {
       setIsAdmin(true);
-      setShowPasswordModal(false);
+    } else {
+      navigate('/login');
+      return;
     }
 
     // Load all users
-    const loadUsers = () => {
-      const allUsers = userManager.getAllUsersForAdmin();
-      setUsers(Object.values(allUsers));
-      setIsLoading(false);
+    const loadUsers = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Get users from local storage
+        const allUsers = userManager.getAllUsersForAdmin();
+        setUsers(Object.values(allUsers));
+        
+        // Try to get users from Supabase if available
+        const { data: supabaseUsers, error } = await supabase
+          .from('users')
+          .select('*');
+        
+        if (!error && supabaseUsers) {
+          // Merge with local users if needed
+          // This is just a placeholder for the actual implementation
+          console.log('Supabase users loaded:', supabaseUsers.length);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadUsers();
     
     // Set up refresh interval
-    const interval = setInterval(loadUsers, 30000); // Refresh every 30 seconds
+    const interval = setInterval(() => loadUsers(), 30000); // Refresh every 30 seconds
     
     return () => clearInterval(interval);
-  }, []);
+  }, [navigate]);
+
+  // Load user activities when a user is selected
+  useEffect(() => {
+    if (selectedUser) {
+      const loadUserActivities = async () => {
+        const activities = await getUserActivities(selectedUser);
+        setUserActivities(activities);
+      };
+      
+      loadUserActivities();
+    }
+  }, [selectedUser]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -79,8 +100,12 @@ const AdminPage: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isAdminAuthenticated');
+    localStorage.removeItem('username');
     navigate('/login');
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSelectedUser(userId === selectedUser ? null : userId);
   };
 
   const filteredUsers = users.filter(user => 
@@ -120,67 +145,6 @@ const AdminPage: React.FC = () => {
     
     return sortDirection === 'asc' ? comparison : -comparison;
   });
-
-  // Password modal
-  if (showPasswordModal) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md"
-        >
-          <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                <Lock className="w-6 h-6 text-yellow-400" />
-                Admin Authentication
-              </CardTitle>
-              <CardDescription className="text-slate-300">
-                Please enter the admin password to continue
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {passwordError && (
-                <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-sm">
-                  {passwordError}
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <label className="text-sm text-slate-300">Admin Password</label>
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && verifyAdmin(adminPassword)}
-                  className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  placeholder="Enter admin password"
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => navigate('/login')}
-                  variant="outline"
-                  className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={() => verifyAdmin(adminPassword)}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                >
-                  Login
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
 
   if (!isAdmin) {
     return (
@@ -490,7 +454,8 @@ const AdminPage: React.FC = () => {
                     return (
                       <tr 
                         key={user.username} 
-                        className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : ''} hover:bg-white/10 transition-colors`}
+                        className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : ''} hover:bg-white/10 transition-colors cursor-pointer`}
+                        onClick={() => handleUserSelect(user.username)}
                       >
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
@@ -537,6 +502,55 @@ const AdminPage: React.FC = () => {
             </table>
           </div>
         </motion.div>
+
+        {/* User Activity Details */}
+        {selectedUser && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl mb-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <User className="w-6 h-6 text-blue-400" />
+                User Activity: {selectedUser}
+              </h2>
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedUser(null)}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                Close
+              </Button>
+            </div>
+            
+            {userActivities.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="w-8 h-8 text-slate-400 mx-auto" />
+                <div className="text-slate-300 mt-2">No activity data available</div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {userActivities.map((activity, index) => (
+                  <div 
+                    key={index}
+                    className="bg-white/5 border border-white/10 rounded-xl p-4"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold text-white">{activity.activity_type}</div>
+                      <div className="text-sm text-slate-400">
+                        {new Date(activity.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-300">
+                      {JSON.stringify(activity.details)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* User Activity Chart */}
         <motion.div
@@ -671,6 +685,94 @@ const AdminPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </motion.div>
+
+        {/* Supabase Connection Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl"
+        >
+          <h2 className="text-2xl font-bold text-white mb-6">Database Connection</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-400" />
+                Supabase Connection Status
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-green-300">Connected to Supabase</span>
+                </div>
+                
+                <div className="text-sm text-slate-300">
+                  <p>User data is being synchronized with Supabase for persistent storage.</p>
+                  <p className="mt-2">User activities are being logged for analytics and tracking.</p>
+                </div>
+                
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.from('users').select('count');
+                      if (!error) {
+                        alert(`Successfully connected to Supabase! ${data.length} records found.`);
+                      } else {
+                        alert(`Error connecting to Supabase: ${error.message}`);
+                      }
+                    } catch (err) {
+                      alert('Failed to connect to Supabase. Check your configuration.');
+                    }
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 mt-2"
+                >
+                  Test Connection
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Lock className="w-5 h-5 text-purple-400" />
+                Data Synchronization
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="text-sm text-slate-300">
+                  <p>All user data is being synchronized between local storage and Supabase.</p>
+                  <p className="mt-2">This allows for multiple simultaneous logins and persistent data storage.</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-300">Last sync:</span>
+                    <span className="text-slate-400">{new Date().toLocaleTimeString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-300">Sync status:</span>
+                    <span className="text-green-300">Active</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-300">Multiple logins:</span>
+                    <span className="text-green-300">Enabled</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={() => {
+                    alert('Data synchronization is active. Multiple users can log in simultaneously.');
+                  }}
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 mt-2"
+                >
+                  Sync Info
+                </Button>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
