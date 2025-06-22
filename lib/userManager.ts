@@ -455,6 +455,72 @@ export class UserManager {
     session.expiresAt = new Date(Date.now() + this.SESSION_EXPIRY).toISOString();
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
   }
+
+  // Delete a user (admin only)
+  async deleteUser(username: string): Promise<boolean> {
+    try {
+      // Get all users
+      const users = this.getAllUsers();
+      
+      // Check if user exists
+      if (!users[username.toLowerCase()]) {
+        return false;
+      }
+      
+      // Delete user
+      delete users[username.toLowerCase()];
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+      
+      // Try to delete from Supabase
+      try {
+        await supabase
+          .from('users')
+          .delete()
+          .eq('username', username.toLowerCase());
+      } catch (error) {
+        console.error('Error deleting user from Supabase:', error);
+      }
+      
+      // Log deletion
+      await logUserActivity('admin_action', {
+        action: 'delete_user',
+        target: username,
+        admin: 'Hari',
+        timestamp: new Date().toISOString()
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
+  }
+
+  // Get all active sessions (admin only)
+  getAllActiveSessions(): any[] {
+    // In a real app, this would query the database for all active sessions
+    // For demo purposes, we'll simulate some active sessions
+    const users = this.getAllUsers();
+    const activeSessions: any[] = [];
+    
+    Object.values(users).forEach(user => {
+      // Randomly determine if user is active (for demo)
+      const isActive = Math.random() > 0.5;
+      if (isActive) {
+        activeSessions.push({
+          username: user.username,
+          startTime: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+          lastActivity: new Date(Date.now() - Math.random() * 60 * 60 * 1000).toISOString(),
+          currentPage: ['dashboard', 'lessons', 'quiz', 'game'][Math.floor(Math.random() * 4)],
+          browser: ['Chrome', 'Firefox', 'Safari', 'Edge'][Math.floor(Math.random() * 4)],
+          device: ['Desktop', 'Mobile', 'Tablet'][Math.floor(Math.random() * 3)],
+          ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
+        });
+      }
+    });
+    
+    return activeSessions;
+  }
 }
 
 export const userManager = new UserManager();

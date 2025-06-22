@@ -17,6 +17,9 @@ const LoginPage: React.FC = () => {
   const [preloadProgress, setPreloadProgress] = useState(0);
 
   useEffect(() => {
+    // Migrate old user data if exists
+    userManager.migrateOldUserData();
+    
     // Check if user is already logged in with a valid session
     if (userManager.isSessionValid()) {
       navigate('/dashboard');
