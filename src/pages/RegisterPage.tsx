@@ -11,7 +11,8 @@ import {
   UserPlus,
   CheckCircle,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  LogOut
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -130,14 +131,9 @@ const RegisterPage: React.FC = () => {
         setSuccess(result.message);
         
         // Auto-login the new user
-        const loginResult = userManager.loginUser(formData.username.trim());
+        const loginResult = await userManager.loginUser(formData.username.trim());
         
         if (loginResult.success) {
-          // Store selections for compatibility
-          localStorage.setItem('selectedCountry', JSON.stringify(selectedCountry));
-          localStorage.setItem('selectedLanguage', JSON.stringify(selectedLanguage));
-          localStorage.setItem('username', formData.username.trim());
-          
           setTimeout(() => {
             navigate('/dashboard');
           }, 2000);
@@ -157,7 +153,7 @@ const RegisterPage: React.FC = () => {
       <div 
         className="min-h-screen flex items-center justify-center p-4 relative"
         style={{
-          backgroundImage: "url('/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg')",
+          backgroundImage: "url('/images/background.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -203,7 +199,7 @@ const RegisterPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg')",
+        backgroundImage: "url('/images/background.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -225,7 +221,7 @@ const RegisterPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/WhatsApp Image 2025-06-21 at 15.07.15_1cb2c828.jpg" 
+            src="/images/logo.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />

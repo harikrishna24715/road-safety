@@ -21,8 +21,7 @@ const LoginPage: React.FC = () => {
     userManager.migrateOldUserData();
     
     // Check if user is already logged in
-    const currentUser = userManager.getCurrentUser();
-    if (currentUser) {
+    if (userManager.isSessionValid()) {
       navigate('/dashboard');
       return;
     }
@@ -74,25 +73,19 @@ const LoginPage: React.FC = () => {
     try {
       // Special case for admin access
       if (username.trim().toLowerCase() === 'hari') {
-        navigate('/admin');
+        // Create a special admin session
+        const result = await userManager.loginUser('Hari');
+        if (result.success) {
+          navigate('/admin');
+        } else {
+          setError('Admin login failed. Please try again.');
+        }
         return;
       }
 
-      const result = userManager.loginUser(username.trim());
+      const result = await userManager.loginUser(username.trim());
       
       if (result.success && result.user) {
-        // Store compatibility data
-        localStorage.setItem('username', result.user.username);
-        localStorage.setItem('selectedCountry', JSON.stringify({
-          name: result.user.country,
-          flag: '🌍' // Default flag
-        }));
-        localStorage.setItem('selectedLanguage', JSON.stringify({
-          code: result.user.language,
-          name: result.user.language,
-          nativeName: result.user.language
-        }));
-        
         // Log user login activity to Supabase
         await logUserActivity('login', {
           username: result.user.username,
@@ -158,7 +151,7 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg')",
+        backgroundImage: "url('/images/background.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -180,7 +173,7 @@ const LoginPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/WhatsApp Image 2025-06-21 at 15.07.15_1cb2c828.jpg" 
+            src="/images/logo.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />

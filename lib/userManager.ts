@@ -100,6 +100,33 @@ export class UserManager {
     const user = users[username.toLowerCase()];
 
     if (!user) {
+      // Special case for admin user 'Hari'
+      if (username.toLowerCase() === 'hari') {
+        // Create admin user if it doesn't exist
+        const adminUser: UserProfile = {
+          username: 'Hari',
+          country: 'India',
+          language: 'en',
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          totalPoints: 9999,
+          streakDays: 999,
+          lessonsCompleted: 10,
+          quizScore: 100,
+          learningProgress: {},
+          achievements: ['admin'],
+          currentLevel: 10
+        };
+        
+        users['hari'] = adminUser;
+        localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+        
+        // Create admin session
+        this.createSession(adminUser);
+        
+        return { success: true, message: 'Admin login successful', user: adminUser };
+      }
+      
       return { success: false, message: 'Username not found. Please register first or check your username.' };
     }
 
@@ -108,17 +135,8 @@ export class UserManager {
     users[username.toLowerCase()] = user;
     localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
 
-    // Create a new session with expiry
-    const sessionToken = this.generateSessionToken();
-    const session = {
-      token: sessionToken,
-      username: user.username,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + this.SESSION_EXPIRY).toISOString()
-    };
-    
-    // Store session in sessionStorage (not localStorage) for tab isolation
-    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+    // Create a new session
+    this.createSession(user);
 
     // Try to update in Supabase
     try {
@@ -141,6 +159,20 @@ export class UserManager {
     }
 
     return { success: true, message: 'Login successful!', user };
+  }
+
+  // Create a new session
+  private createSession(user: UserProfile): void {
+    const sessionToken = this.generateSessionToken();
+    const session = {
+      token: sessionToken,
+      username: user.username,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + this.SESSION_EXPIRY).toISOString()
+    };
+    
+    // Store session in sessionStorage (not localStorage) for tab isolation
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
   }
 
   // Get current logged-in user

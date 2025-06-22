@@ -17,11 +17,12 @@ import {
   Lock,
   Trash2,
   AlertTriangle,
-  Activity,
+  X,
+  Check,
   Eye,
-  Calendar,
-  CheckCircle,
-  XCircle
+  EyeOff,
+  UserX,
+  Activity
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -42,7 +43,8 @@ const AdminPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if the user is Hari (admin)
@@ -61,6 +63,34 @@ const AdminPage: React.FC = () => {
     }
 
     // Load all users
+    const loadUsers = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Get users from local storage
+        const allUsers = userManager.getAllUsersForAdmin();
+        setUsers(Object.values(allUsers));
+        
+        // Get active sessions
+        const sessions = userManager.getAllActiveSessions();
+        setActiveSessions(sessions);
+        
+        // Try to get users from Supabase if available
+        const { data: supabaseUsers, error } = await supabase
+          .from('users')
+          .select('*');
+        
+        if (!error && supabaseUsers) {
+          // Merge with local users if needed
+          console.log('Supabase users loaded:', supabaseUsers.length);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadUsers();
     
     // Set up refresh interval
@@ -68,60 +98,6 @@ const AdminPage: React.FC = () => {
     
     return () => clearInterval(interval);
   }, [navigate]);
-
-  const loadUsers = async () => {
-    setIsLoading(true);
-    setLastRefresh(new Date());
-    
-    try {
-      // Get users from local storage
-      const allUsers = userManager.getAllUsersForAdmin();
-      setUsers(Object.values(allUsers));
-      
-      // Get active sessions
-      const sessions = getActiveSessions();
-      setActiveSessions(sessions);
-      
-      // Try to get users from Supabase if available
-      const { data: supabaseUsers, error } = await supabase
-        .from('users')
-        .select('*');
-      
-      if (!error && supabaseUsers) {
-        // Merge with local users if needed
-        console.log('Supabase users loaded:', supabaseUsers.length);
-      }
-    } catch (error) {
-      console.error('Error loading users:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Get active sessions from sessionStorage across all browser tabs
-  const getActiveSessions = () => {
-    const sessions: any[] = [];
-    const allUsers = userManager.getAllUsersForAdmin();
-    
-    // For demo purposes, simulate some active sessions
-    Object.values(allUsers).forEach(user => {
-      // Randomly determine if user is active (for demo)
-      const isActive = Math.random() > 0.5;
-      if (isActive) {
-        sessions.push({
-          username: user.username,
-          startTime: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
-          lastActivity: new Date(Date.now() - Math.random() * 60 * 60 * 1000).toISOString(),
-          currentPage: ['dashboard', 'lessons', 'quiz', 'game'][Math.floor(Math.random() * 4)],
-          browser: ['Chrome', 'Firefox', 'Safari', 'Edge'][Math.floor(Math.random() * 4)],
-          device: ['Desktop', 'Mobile', 'Tablet'][Math.floor(Math.random() * 3)],
-          ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
-        });
-      }
-    });
-    
-    return sessions;
-  };
 
   // Load user activities when a user is selected
   useEffect(() => {
@@ -144,8 +120,8 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    userManager.logout();
+  const handleLogout = async () => {
+    await userManager.logout();
     navigate('/login');
   };
 
@@ -153,49 +129,36 @@ const AdminPage: React.FC = () => {
     setSelectedUser(userId === selectedUser ? null : userId);
   };
 
-  const handleDeleteUser = (username: string) => {
-    setShowDeleteConfirm(username);
-  };
-
-  const confirmDeleteUser = async (username: string) => {
+  const handleDeleteUser = async (username: string) => {
     try {
-      // Remove user from local storage
-      const allUsers = userManager.getAllUsersForAdmin();
-      delete allUsers[username.toLowerCase()];
-      localStorage.setItem('registeredUsers', JSON.stringify(allUsers));
-      
-      // Remove from Supabase if connected
-      try {
-        await supabase
-          .from('users')
-          .delete()
-          .eq('username', username.toLowerCase());
-      } catch (error) {
-        console.error('Error deleting user from Supabase:', error);
-      }
-      
-      // Log the deletion
-      await supabase
-        .from('admin_logs')
-        .insert({
-          action: 'user_deleted',
-          admin: 'Hari',
-          target_user: username,
-          timestamp: new Date().toISOString()
-        });
-      
-      // Refresh the user list
-      loadUsers();
-      
-      // Clear the confirmation dialog
-      setShowDeleteConfirm(null);
-      
-      // Clear selected user if it was the deleted one
-      if (selectedUser === username) {
-        setSelectedUser(null);
+      const success = await userManager.deleteUser(username);
+      if (success) {
+        setDeleteSuccess(`User ${username} has been deleted successfully.`);
+        setDeleteError(null);
+        
+        // Update users list
+        const allUsers = userManager.getAllUsersForAdmin();
+        setUsers(Object.values(allUsers));
+        
+        // Close delete confirmation
+        setShowDeleteConfirm(null);
+        
+        // Close user details if the deleted user was selected
+        if (selectedUser === username) {
+          setSelectedUser(null);
+        }
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setDeleteSuccess(null);
+        }, 3000);
+      } else {
+        setDeleteError(`Failed to delete user ${username}. Please try again.`);
+        setDeleteSuccess(null);
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
+      setDeleteError('An error occurred while deleting the user.');
+      setDeleteSuccess(null);
     }
   };
 
@@ -259,41 +222,42 @@ const AdminPage: React.FC = () => {
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl max-w-md w-full p-8 shadow-2xl"
             >
               <div className="text-center mb-6">
-                <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">Delete User Account</h2>
-                <p className="text-red-300">
-                  Are you sure you want to delete the account for <span className="font-bold">{showDeleteConfirm}</span>?
-                </p>
-                <p className="text-slate-300 mt-2 text-sm">
-                  This action cannot be undone. All user data, progress, and session information will be permanently deleted.
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
+                  <AlertTriangle className="w-8 h-8 text-red-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Delete User</h2>
+                <p className="text-slate-300">
+                  Are you sure you want to delete user <span className="font-semibold text-white">{showDeleteConfirm}</span>? 
+                  This action cannot be undone.
                 </p>
               </div>
               
               <div className="flex gap-4">
                 <Button 
-                  variant="outline" 
                   onClick={() => setShowDeleteConfirm(null)}
+                  variant="outline" 
                   className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
                 >
+                  <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
                 <Button 
-                  onClick={() => confirmDeleteUser(showDeleteConfirm)}
+                  onClick={() => handleDeleteUser(showDeleteConfirm)}
                   className="flex-1 bg-red-500 hover:bg-red-600 text-white"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete User
+                  Delete
                 </Button>
               </div>
             </motion.div>
           </div>
         )}
-      
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -304,11 +268,11 @@ const AdminPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <Button 
                 variant="ghost" 
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/dashboard')}
                 className="text-white hover:bg-white/10 flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Login
+                Back to Dashboard
               </Button>
             </div>
             <Button 
@@ -371,7 +335,15 @@ const AdminPage: React.FC = () => {
                 transition={{ delay: 0.5 }}
               >
                 <Button 
-                  onClick={() => loadUsers()}
+                  onClick={() => {
+                    setIsLoading(true);
+                    setTimeout(() => {
+                      const allUsers = userManager.getAllUsersForAdmin();
+                      setUsers(Object.values(allUsers));
+                      setActiveSessions(userManager.getAllActiveSessions());
+                      setIsLoading(false);
+                    }, 500);
+                  }}
                   variant="outline"
                   className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 >
@@ -383,17 +355,30 @@ const AdminPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Last Refresh Time */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mb-4 text-right"
-        >
-          <span className="text-sm text-slate-400">
-            Last refreshed: {lastRefresh.toLocaleTimeString()}
-          </span>
-        </motion.div>
+        {/* Success/Error Messages */}
+        {deleteSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-4 p-4 bg-green-500/20 border border-green-500/30 rounded-xl text-green-300 flex items-center gap-2"
+          >
+            <Check className="w-5 h-5" />
+            {deleteSuccess}
+          </motion.div>
+        )}
+        
+        {deleteError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-4 p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 flex items-center gap-2"
+          >
+            <AlertTriangle className="w-5 h-5" />
+            {deleteError}
+          </motion.div>
+        )}
 
         {/* Stats Overview */}
         <motion.div
@@ -412,10 +397,14 @@ const AdminPage: React.FC = () => {
             },
             { 
               icon: User, 
-              value: activeSessions.length, 
+              value: users.filter(user => {
+                const lastLogin = new Date(user.lastLoginAt);
+                const daysSinceLogin = (Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+                return daysSinceLogin <= 7;
+              }).length, 
               label: 'Active Users', 
               gradient: 'from-green-500 to-emerald-500',
-              description: 'Currently online'
+              description: 'Active in last 7 days'
             },
             { 
               icon: BookOpen, 
@@ -454,16 +443,16 @@ const AdminPage: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* Active Sessions Table */}
+        {/* Active Sessions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0.3 }}
           className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl mb-8"
         >
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
             <Activity className="w-6 h-6 text-green-400" />
-            Active User Sessions
+            Active Sessions
           </h2>
           
           <div className="overflow-x-auto">
@@ -471,7 +460,7 @@ const AdminPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="text-left py-3 px-4 text-slate-300">Username</th>
-                  <th className="text-left py-3 px-4 text-slate-300">Login Time</th>
+                  <th className="text-left py-3 px-4 text-slate-300">Start Time</th>
                   <th className="text-left py-3 px-4 text-slate-300">Last Activity</th>
                   <th className="text-left py-3 px-4 text-slate-300">Current Page</th>
                   <th className="text-left py-3 px-4 text-slate-300">Browser</th>
@@ -481,14 +470,7 @@ const AdminPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-8">
-                      <RefreshCw className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
-                      <div className="text-slate-300 mt-2">Loading session data...</div>
-                    </td>
-                  </tr>
-                ) : activeSessions.length === 0 ? (
+                {activeSessions.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-8">
                       <Users className="w-8 h-8 text-slate-400 mx-auto" />
@@ -498,7 +480,7 @@ const AdminPage: React.FC = () => {
                 ) : (
                   activeSessions.map((session, index) => (
                     <tr 
-                      key={`${session.username}-${index}`} 
+                      key={index} 
                       className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : ''} hover:bg-white/10 transition-colors`}
                     >
                       <td className="py-4 px-4">
@@ -510,13 +492,13 @@ const AdminPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-4 px-4 text-slate-300">
-                        {new Date(session.startTime).toLocaleTimeString()}
+                        {new Date(session.startTime).toLocaleString()}
                       </td>
                       <td className="py-4 px-4 text-slate-300">
-                        {new Date(session.lastActivity).toLocaleTimeString()}
+                        {new Date(session.lastActivity).toLocaleString()}
                       </td>
                       <td className="py-4 px-4">
-                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                        <Badge className="bg-blue-500/20 text-blue-300 border-0">
                           {session.currentPage}
                         </Badge>
                       </td>
@@ -524,23 +506,14 @@ const AdminPage: React.FC = () => {
                       <td className="py-4 px-4 text-slate-300">{session.device}</td>
                       <td className="py-4 px-4 text-slate-300">{session.ip}</td>
                       <td className="py-4 px-4">
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-8 px-2"
-                            onClick={() => handleUserSelect(session.username)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-red-500 hover:bg-red-600 text-white h-8 px-2"
-                            onClick={() => handleDeleteUser(session.username)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          onClick={() => setShowDeleteConfirm(session.username)}
+                        >
+                          <UserX className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -557,10 +530,7 @@ const AdminPage: React.FC = () => {
           transition={{ delay: 0.3 }}
           className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl mb-8"
         >
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-400" />
-            Registered Users
-          </h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Registered Users</h2>
           
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -657,7 +627,7 @@ const AdminPage: React.FC = () => {
                       )}
                     </div>
                   </th>
-                  <th className="text-left py-3 px-4 text-slate-300">Status</th>
+                  <th className="text-left py-3 px-4 text-slate-300">Progress</th>
                   <th className="text-left py-3 px-4 text-slate-300">Actions</th>
                 </tr>
               </thead>
@@ -678,17 +648,18 @@ const AdminPage: React.FC = () => {
                   </tr>
                 ) : (
                   sortedUsers.map((user, index) => {
-                    const isActive = activeSessions.some(session => session.username === user.username);
+                    const lastLogin = new Date(user.lastLoginAt);
+                    const daysSinceLogin = (Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+                    const isActive = daysSinceLogin <= 7;
                     
                     return (
                       <tr 
                         key={user.username} 
-                        className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : ''} hover:bg-white/10 transition-colors cursor-pointer`}
-                        onClick={() => handleUserSelect(user.username)}
+                        className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : ''} hover:bg-white/10 transition-colors`}
                       >
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full ${isActive ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'} flex items-center justify-center text-white font-bold`}>
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
                               {user.username.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -713,30 +684,32 @@ const AdminPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <Badge className={isActive ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}>
-                            {isActive ? 'Online' : 'Offline'}
-                          </Badge>
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                              style={{ width: `${Math.min((user.lessonsCompleted / 2) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-xs text-slate-400 mt-1">
+                            {Math.min(Math.round((user.lessonsCompleted / 2) * 100), 100)}% complete
+                          </div>
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex gap-2">
                             <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-8 px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUserSelect(user.username);
-                              }}
+                              variant="ghost" 
+                              size="sm"
+                              className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                              onClick={() => handleUserSelect(user.username)}
                             >
-                              <Eye className="w-4 h-4" />
+                              {selectedUser === user.username ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </Button>
                             <Button 
-                              size="sm" 
-                              className="bg-red-500 hover:bg-red-600 text-white h-8 px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteUser(user.username);
-                              }}
+                              variant="ghost" 
+                              size="sm"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              onClick={() => setShowDeleteConfirm(user.username)}
+                              disabled={user.username.toLowerCase() === 'hari'}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -763,145 +736,17 @@ const AdminPage: React.FC = () => {
                 <User className="w-6 h-6 text-blue-400" />
                 User Activity: {selectedUser}
               </h2>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSelectedUser(null)}
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
-                  Close
-                </Button>
-                <Button 
-                  className="bg-red-500 hover:bg-red-600 text-white"
-                  onClick={() => handleDeleteUser(selectedUser)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete User
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedUser(null)}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                Close
+              </Button>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <Card className="bg-white/10 border-white/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-white">User Information</CardTitle>
-                  <CardDescription className="text-slate-400">Account details</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Username:</span>
-                      <span className="text-white">{selectedUser}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Registration:</span>
-                      <span className="text-white">
-                        {new Date(users.find(u => u.username === selectedUser)?.createdAt || '').toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Last Login:</span>
-                      <span className="text-white">
-                        {new Date(users.find(u => u.username === selectedUser)?.lastLoginAt || '').toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Status:</span>
-                      <span className={activeSessions.some(s => s.username === selectedUser) ? 'text-green-300' : 'text-red-300'}>
-                        {activeSessions.some(s => s.username === selectedUser) ? 'Online' : 'Offline'}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 border-white/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-white">Learning Progress</CardTitle>
-                  <CardDescription className="text-slate-400">User achievements</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Lessons Completed:</span>
-                      <span className="text-white">
-                        {users.find(u => u.username === selectedUser)?.lessonsCompleted || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Total Points:</span>
-                      <span className="text-white">
-                        {users.find(u => u.username === selectedUser)?.totalPoints || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Day Streak:</span>
-                      <span className="text-white">
-                        {users.find(u => u.username === selectedUser)?.streakDays || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Quiz Score:</span>
-                      <span className="text-white">
-                        {users.find(u => u.username === selectedUser)?.quizScore || 0}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 border-white/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-white">Current Session</CardTitle>
-                  <CardDescription className="text-slate-400">Active session details</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {activeSessions.some(s => s.username === selectedUser) ? (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Started:</span>
-                        <span className="text-white">
-                          {new Date(activeSessions.find(s => s.username === selectedUser)?.startTime || '').toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Current Page:</span>
-                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                          {activeSessions.find(s => s.username === selectedUser)?.currentPage || 'Unknown'}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Device:</span>
-                        <span className="text-white">
-                          {activeSessions.find(s => s.username === selectedUser)?.device || 'Unknown'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Browser:</span>
-                        <span className="text-white">
-                          {activeSessions.find(s => s.username === selectedUser)?.browser || 'Unknown'}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-slate-400">
-                      <div className="text-center">
-                        <XCircle className="w-8 h-8 mx-auto mb-2" />
-                        <p>No active session</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-blue-400" />
-              Activity History
-            </h3>
             
             {userActivities.length === 0 ? (
-              <div className="text-center py-8 bg-white/5 rounded-2xl">
+              <div className="text-center py-8">
                 <Clock className="w-8 h-8 text-slate-400 mx-auto" />
                 <div className="text-slate-300 mt-2">No activity data available</div>
               </div>
@@ -913,16 +758,8 @@ const AdminPage: React.FC = () => {
                     className="bg-white/5 border border-white/10 rounded-xl p-4"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold text-white flex items-center gap-2">
-                        {activity.activity_type === 'login' && <CheckCircle className="w-4 h-4 text-green-400" />}
-                        {activity.activity_type === 'logout' && <LogOut className="w-4 h-4 text-red-400" />}
-                        {activity.activity_type === 'registration' && <User className="w-4 h-4 text-blue-400" />}
-                        {activity.activity_type === 'progress_update' && <BookOpen className="w-4 h-4 text-yellow-400" />}
-                        {activity.activity_type === 'learning_progress' && <Trophy className="w-4 h-4 text-purple-400" />}
-                        {activity.activity_type}
-                      </div>
-                      <div className="text-sm text-slate-400 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
+                      <div className="font-semibold text-white">{activity.activity_type}</div>
+                      <div className="text-sm text-slate-400">
                         {new Date(activity.created_at).toLocaleString()}
                       </div>
                     </div>
@@ -948,13 +785,13 @@ const AdminPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-white/10 border-white/20">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-white">Login Timeline</CardTitle>
-                <CardDescription className="text-slate-400">User logins over time</CardDescription>
+                <CardTitle className="text-lg text-white">Registration Timeline</CardTitle>
+                <CardDescription className="text-slate-400">New user registrations</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-40 flex items-end justify-between gap-1">
                   {Array.from({ length: 7 }).map((_, i) => {
-                    // Calculate users logged in in the last 7 days
+                    // Calculate users registered in the last 7 days
                     const date = new Date();
                     date.setDate(date.getDate() - (6 - i));
                     date.setHours(0, 0, 0, 0);
@@ -963,8 +800,8 @@ const AdminPage: React.FC = () => {
                     nextDate.setDate(nextDate.getDate() + 1);
                     
                     const count = users.filter(user => {
-                      const loginDate = new Date(user.lastLoginAt);
-                      return loginDate >= date && loginDate < nextDate;
+                      const createdDate = new Date(user.createdAt);
+                      return createdDate >= date && createdDate < nextDate;
                     }).length;
                     
                     const maxCount = Math.max(1, ...Array.from({ length: 7 }).map((_, j) => {
@@ -976,8 +813,8 @@ const AdminPage: React.FC = () => {
                       nd.setDate(nd.getDate() + 1);
                       
                       return users.filter(user => {
-                        const loginDate = new Date(user.lastLoginAt);
-                        return loginDate >= d && loginDate < nd;
+                        const createdDate = new Date(user.createdAt);
+                        return createdDate >= d && createdDate < nd;
                       }).length;
                     }));
                     
@@ -1072,100 +909,88 @@ const AdminPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Admin Actions */}
+        {/* Supabase Connection Status */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl"
         >
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-red-400" />
-            Admin Actions
-          </h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Database Connection</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-red-400" />
-                Security Controls
+                <Shield className="w-5 h-5 text-blue-400" />
+                Supabase Connection Status
               </h3>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Admin Access:</span>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Restricted to "Hari"
-                  </Badge>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-green-300">Connected to Supabase</span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Session Monitoring:</span>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Active
-                  </Badge>
+                <div className="text-sm text-slate-300">
+                  <p>User data is being synchronized with Supabase for persistent storage.</p>
+                  <p className="mt-2">User activities are being logged for analytics and tracking.</p>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">User Deletion:</span>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Enabled
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Activity Logging:</span>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Enabled
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="mt-6 text-sm text-slate-300">
-                <p>As admin, you have full control over user accounts and can monitor all activity in real-time.</p>
-                <p className="mt-2">All actions are logged for security and audit purposes.</p>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.from('users').select('count');
+                      if (!error) {
+                        alert(`Successfully connected to Supabase! ${data.length} records found.`);
+                      } else {
+                        alert(`Error connecting to Supabase: ${error.message}`);
+                      }
+                    } catch (err) {
+                      alert('Failed to connect to Supabase. Check your configuration.');
+                    }
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 mt-2"
+                >
+                  Test Connection
+                </Button>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-white/20 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-400" />
-                System Status
+                <Lock className="w-5 h-5 text-purple-400" />
+                Data Synchronization
               </h3>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">System Status:</span>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Online
-                  </Badge>
+                <div className="text-sm text-slate-300">
+                  <p>All user data is being synchronized between local storage and Supabase.</p>
+                  <p className="mt-2">This allows for multiple simultaneous logins and persistent data storage.</p>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Database Connection:</span>
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    Connected
-                  </Badge>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-300">Last sync:</span>
+                    <span className="text-slate-400">{new Date().toLocaleTimeString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-300">Sync status:</span>
+                    <span className="text-green-300">Active</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-300">Multiple logins:</span>
+                    <span className="text-green-300">Enabled</span>
+                  </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Last Data Sync:</span>
-                  <span className="text-slate-300">{new Date().toLocaleTimeString()}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Active Users:</span>
-                  <span className="text-slate-300">{activeSessions.length} online</span>
-                </div>
-              </div>
-              
-              <div className="mt-6">
                 <Button 
-                  onClick={loadUsers}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  onClick={() => {
+                    alert('Data synchronization is active. Multiple users can log in simultaneously.');
+                  }}
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 mt-2"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh All Data
+                  Sync Info
                 </Button>
               </div>
             </div>
