@@ -21,6 +21,22 @@ function App() {
     };
     
     checkUserSession();
+    
+    // Attempt to sync with Supabase in the background
+    const syncData = async () => {
+      try {
+        await userManager.syncWithSupabase();
+      } catch (error) {
+        console.error('Error syncing with Supabase:', error);
+      }
+    };
+    
+    syncData();
+    
+    // Set up periodic sync
+    const syncInterval = setInterval(syncData, 5 * 60 * 1000); // Sync every 5 minutes
+    
+    return () => clearInterval(syncInterval);
   }, []);
 
   return (

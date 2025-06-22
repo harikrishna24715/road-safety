@@ -74,6 +74,7 @@ const LoginPage: React.FC = () => {
     try {
       // Special case for admin access
       if (username.trim().toLowerCase() === 'hari') {
+        localStorage.setItem('username', 'Hari');
         navigate('/admin');
         return;
       }
@@ -158,7 +159,7 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/images/background.jpg')",
+        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy copy.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -180,7 +181,7 @@ const LoginPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/images/logo.png" 
+            src="/ChatGPT Image Jun 21, 2025, 03_33_49 PM copy.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />
