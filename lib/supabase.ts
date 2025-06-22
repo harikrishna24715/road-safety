@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 // These would normally come from environment variables
-// For demo purposes, using placeholder values
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+// For demo purposes, using placeholder values that won't cause fetch errors
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
