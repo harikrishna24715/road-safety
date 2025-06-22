@@ -20,8 +20,9 @@ const LoginPage: React.FC = () => {
     // Migrate old user data if exists
     userManager.migrateOldUserData();
     
-    // Check if user is already logged in with a valid session
-    if (userManager.isSessionValid()) {
+    // Check if user is already logged in
+    const currentUser = userManager.getCurrentUser();
+    if (currentUser) {
       navigate('/dashboard');
       return;
     }
@@ -73,14 +74,25 @@ const LoginPage: React.FC = () => {
     try {
       // Special case for admin access
       if (username.trim().toLowerCase() === 'hari') {
-        localStorage.setItem('username', 'Hari');
         navigate('/admin');
         return;
       }
 
-      const result = await userManager.loginUser(username.trim());
+      const result = userManager.loginUser(username.trim());
       
       if (result.success && result.user) {
+        // Store compatibility data
+        localStorage.setItem('username', result.user.username);
+        localStorage.setItem('selectedCountry', JSON.stringify({
+          name: result.user.country,
+          flag: '🌍' // Default flag
+        }));
+        localStorage.setItem('selectedLanguage', JSON.stringify({
+          code: result.user.language,
+          name: result.user.language,
+          nativeName: result.user.language
+        }));
+        
         // Log user login activity to Supabase
         await logUserActivity('login', {
           username: result.user.username,
@@ -146,7 +158,7 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/images/background.jpg')",
+        backgroundImage: "url('/WhatsApp Image 2025-06-21 at 15.07.16_d2467d85.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -168,7 +180,7 @@ const LoginPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/images/logo.png" 
+            src="/WhatsApp Image 2025-06-21 at 15.07.15_1cb2c828.jpg" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />
@@ -284,7 +296,7 @@ const LoginPage: React.FC = () => {
           className="text-center mt-8"
         >
           <p className="text-slate-400 text-sm">
-            🔒 Secure login - Your session will expire after 24 hours of inactivity
+            🌟 Your progress is saved and will continue where you left off 🌟
           </p>
         </motion.div>
       </motion.div>
