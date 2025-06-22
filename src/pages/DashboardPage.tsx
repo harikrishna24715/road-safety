@@ -35,6 +35,7 @@ const DashboardPage: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
+    // Check if user is logged in with a valid session
     const user = userManager.getCurrentUser();
     
     if (!user) {
@@ -102,8 +103,8 @@ const DashboardPage: React.FC = () => {
     setShowWelcome(false);
   };
 
-  const handleLogout = () => {
-    userManager.logout();
+  const handleLogout = async () => {
+    await userManager.logout();
     navigate('/login');
   };
 
@@ -427,6 +428,10 @@ const DashboardPage: React.FC = () => {
                   <span className="text-slate-400">Member since:</span>
                   <span className="text-white">{new Date(currentUser.createdAt).toLocaleDateString()}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Session expires:</span>
+                  <span className="text-white">24 hours after login</span>
+                </div>
               </div>
             </motion.div>
 
@@ -565,6 +570,20 @@ const DashboardPage: React.FC = () => {
                   {currentUser.lessonsCompleted >= 2 && (
                     <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
                   )}
+                </motion.button>
+                
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.1 }}
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 p-4 bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 rounded-xl text-white transition-all duration-300 group"
+                >
+                  <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <LogOut className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-medium">Logout</span>
+                  <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
                 </motion.button>
               </div>
             </motion.div>

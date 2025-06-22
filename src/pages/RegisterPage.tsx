@@ -119,7 +119,7 @@ const RegisterPage: React.FC = () => {
     setError('');
     
     try {
-      const result = userManager.registerUser({
+      const result = await userManager.registerUser({
         username: formData.username.trim(),
         email: formData.email.trim() || undefined,
         country: selectedCountry!.name,
@@ -130,14 +130,9 @@ const RegisterPage: React.FC = () => {
         setSuccess(result.message);
         
         // Auto-login the new user
-        const loginResult = userManager.loginUser(formData.username.trim());
+        const loginResult = await userManager.loginUser(formData.username.trim());
         
         if (loginResult.success) {
-          // Store selections for compatibility
-          localStorage.setItem('selectedCountry', JSON.stringify(selectedCountry));
-          localStorage.setItem('selectedLanguage', JSON.stringify(selectedLanguage));
-          localStorage.setItem('username', formData.username.trim());
-          
           setTimeout(() => {
             navigate('/dashboard');
           }, 2000);
@@ -157,7 +152,7 @@ const RegisterPage: React.FC = () => {
       <div 
         className="min-h-screen flex items-center justify-center p-4 relative"
         style={{
-          backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy copy.png')",
+          backgroundImage: "url('/images/background.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -203,7 +198,7 @@ const RegisterPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy copy.png')",
+        backgroundImage: "url('/images/background.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -225,7 +220,7 @@ const RegisterPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/ChatGPT Image Jun 21, 2025, 03_33_49 PM copy.png" 
+            src="/images/logo.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />

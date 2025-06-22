@@ -11,16 +11,29 @@ import { userManager } from '../lib/userManager';
 
 function App() {
   useEffect(() => {
-    // Check if there's a stored user and redirect accordingly
+    // Check if there's a valid session and redirect accordingly
     const checkUserSession = () => {
-      const currentUser = userManager.getCurrentUser();
-      if (currentUser) {
-        // User is logged in, no need to redirect
-        console.log('User session found:', currentUser.username);
+      if (!userManager.isSessionValid()) {
+        // Clear any old localStorage items for compatibility
+        localStorage.removeItem('username');
+        localStorage.removeItem('selectedCountry');
+        localStorage.removeItem('selectedLanguage');
+        
+        // If we're not on login or register page, redirect to login
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/login' && currentPath !== '/register') {
+          window.location.href = '/login';
+        }
+      } else {
+        // Refresh the session to extend its validity
+        userManager.refreshSession();
       }
     };
     
     checkUserSession();
+    
+    // Set up session check interval
+    const sessionCheckInterval = setInterval(checkUserSession, 5 * 60 * 1000); // Check every 5 minutes
     
     // Attempt to sync with Supabase in the background
     const syncData = async () => {
@@ -36,7 +49,10 @@ function App() {
     // Set up periodic sync
     const syncInterval = setInterval(syncData, 5 * 60 * 1000); // Sync every 5 minutes
     
-    return () => clearInterval(syncInterval);
+    return () => {
+      clearInterval(sessionCheckInterval);
+      clearInterval(syncInterval);
+    };
   }, []);
 
   return (

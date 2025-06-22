@@ -17,12 +17,8 @@ const LoginPage: React.FC = () => {
   const [preloadProgress, setPreloadProgress] = useState(0);
 
   useEffect(() => {
-    // Migrate old user data if exists
-    userManager.migrateOldUserData();
-    
-    // Check if user is already logged in
-    const currentUser = userManager.getCurrentUser();
-    if (currentUser) {
+    // Check if user is already logged in with a valid session
+    if (userManager.isSessionValid()) {
       navigate('/dashboard');
       return;
     }
@@ -82,18 +78,6 @@ const LoginPage: React.FC = () => {
       const result = await userManager.loginUser(username.trim());
       
       if (result.success && result.user) {
-        // Store compatibility data
-        localStorage.setItem('username', result.user.username);
-        localStorage.setItem('selectedCountry', JSON.stringify({
-          name: result.user.country,
-          flag: '🌍' // Default flag
-        }));
-        localStorage.setItem('selectedLanguage', JSON.stringify({
-          code: result.user.language,
-          name: result.user.language,
-          nativeName: result.user.language
-        }));
-        
         // Log user login activity to Supabase
         await logUserActivity('login', {
           username: result.user.username,
@@ -159,7 +143,7 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy copy.png')",
+        backgroundImage: "url('/images/background.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -181,7 +165,7 @@ const LoginPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/ChatGPT Image Jun 21, 2025, 03_33_49 PM copy.png" 
+            src="/images/logo.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />
@@ -297,7 +281,7 @@ const LoginPage: React.FC = () => {
           className="text-center mt-8"
         >
           <p className="text-slate-400 text-sm">
-            🌟 Your progress is saved and will continue where you left off 🌟
+            🔒 Secure login - Your session will expire after 24 hours of inactivity
           </p>
         </motion.div>
       </motion.div>

@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // These would normally come from environment variables
 // For demo purposes, using placeholder values that won't cause errors
-const supabaseUrl = 'https://example.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaXpveXFwdWZ6YnZqcGJyZXRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc4ODk5NzIsImV4cCI6MjAwMzQ2NTk3Mn0.S5U6MXnn5-YaiYpZQT4riNfH7HUvUbP9jcyXLIE9KA4';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'dummy-key';
 
 // Create a mock Supabase client that doesn't actually make network requests
 // This prevents the "Failed to fetch" errors while still allowing the app to function
@@ -43,10 +43,10 @@ export const supabase = {
 
 // Helper function to get or create user ID
 export const getUserId = (): string => {
-  let userId = localStorage.getItem('userId');
+  let userId = sessionStorage.getItem('userId');
   if (!userId) {
     userId = 'user_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('userId', userId);
+    sessionStorage.setItem('userId', userId);
   }
   return userId;
 };
@@ -55,12 +55,12 @@ export const getUserId = (): string => {
 export const updateProgress = async (lesson: number, language: string) => {
   const userId = getUserId();
   try {
-    // Store progress in localStorage instead of making a network request
+    // Store progress in sessionStorage instead of making a network request
     const progressKey = `progress_${userId}_${language}`;
-    const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+    const progress = JSON.parse(sessionStorage.getItem(progressKey) || '{}');
     progress.lesson = lesson;
     progress.updated_at = new Date().toISOString();
-    localStorage.setItem(progressKey, JSON.stringify(progress));
+    sessionStorage.setItem(progressKey, JSON.stringify(progress));
     return { error: null };
   } catch (err) {
     console.log('Progress tracking unavailable');
@@ -71,9 +71,9 @@ export const updateProgress = async (lesson: number, language: string) => {
 export const getProgress = async (language: string) => {
   const userId = getUserId();
   try {
-    // Get progress from localStorage
+    // Get progress from sessionStorage
     const progressKey = `progress_${userId}_${language}`;
-    const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+    const progress = JSON.parse(sessionStorage.getItem(progressKey) || '{}');
     return progress.lesson || 0;
   } catch (err) {
     return 0;
@@ -84,16 +84,16 @@ export const getProgress = async (language: string) => {
 export const logUserActivity = async (activity: string, details?: Record<string, any>) => {
   const userId = getUserId();
   try {
-    // Store activity in localStorage
+    // Store activity in sessionStorage
     const activitiesKey = `activities_${userId}`;
-    const activities = JSON.parse(localStorage.getItem(activitiesKey) || '[]');
+    const activities = JSON.parse(sessionStorage.getItem(activitiesKey) || '[]');
     activities.push({
       user_id: userId,
       activity_type: activity,
       details: details || {},
       created_at: new Date().toISOString()
     });
-    localStorage.setItem(activitiesKey, JSON.stringify(activities));
+    sessionStorage.setItem(activitiesKey, JSON.stringify(activities));
     return { error: null };
   } catch (err) {
     console.log('Activity tracking unavailable');
@@ -104,9 +104,9 @@ export const logUserActivity = async (activity: string, details?: Record<string,
 // Get user activities
 export const getUserActivities = async (userId: string) => {
   try {
-    // Get activities from localStorage
+    // Get activities from sessionStorage
     const activitiesKey = `activities_${userId}`;
-    const activities = JSON.parse(localStorage.getItem(activitiesKey) || '[]');
+    const activities = JSON.parse(sessionStorage.getItem(activitiesKey) || '[]');
     return activities;
   } catch (err) {
     return [];

@@ -18,8 +18,8 @@ export interface UserProfile {
 
 export class UserManager {
   private readonly USERS_KEY = 'registeredUsers';
-  private readonly CURRENT_USER_KEY = 'currentUser';
-  private readonly ACTIVE_SESSIONS = 'activeSessions';
+  private readonly SESSION_KEY = 'userSession';
+  private readonly SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
   // Register a new user
   async registerUser(userData: {
@@ -94,7 +94,7 @@ export class UserManager {
     return { success: true, message: 'Account created successfully!' };
   }
 
-  // Login user
+  // Login user and create a session
   async loginUser(username: string): Promise<{ success: boolean; message: string; user?: UserProfile }> {
     const users = this.getAllUsers();
     const user = users[username.toLowerCase()];
@@ -108,17 +108,17 @@ export class UserManager {
     users[username.toLowerCase()] = user;
     localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
 
-    // Set as current user
-    localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
-
-    // Add to active sessions
-    const activeSessions = JSON.parse(localStorage.getItem(this.ACTIVE_SESSIONS) || '{}');
-    const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-    activeSessions[sessionId] = {
+    // Create a new session with expiry
+    const sessionToken = this.generateSessionToken();
+    const session = {
+      token: sessionToken,
       username: user.username,
-      startedAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + this.SESSION_EXPIRY).toISOString()
     };
-    localStorage.setItem(this.ACTIVE_SESSIONS, JSON.stringify(activeSessions));
+    
+    // Store session in sessionStorage (not localStorage) for tab isolation
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
 
     // Try to update in Supabase
     try {
@@ -145,8 +145,17 @@ export class UserManager {
 
   // Get current logged-in user
   getCurrentUser(): UserProfile | null {
-    const currentUser = localStorage.getItem(this.CURRENT_USER_KEY);
-    return currentUser ? JSON.parse(currentUser) : null;
+    const session = this.getSession();
+    if (!session) return null;
+    
+    // Check if session is expired
+    if (new Date(session.expiresAt) < new Date()) {
+      this.logout();
+      return null;
+    }
+    
+    const users = this.getAllUsers();
+    return users[session.username.toLowerCase()] || null;
   }
 
   // Update user progress
@@ -160,9 +169,6 @@ export class UserManager {
     const users = this.getAllUsers();
     users[currentUser.username.toLowerCase()] = updatedUser;
     localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
-
-    // Update current user
-    localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
 
     // Try to update in Supabase
     try {
@@ -244,12 +250,6 @@ export class UserManager {
     return this.getAllUsers();
   }
 
-  // Get active sessions
-  getActiveSessions(): Record<string, { username: string; startedAt: string }> {
-    const sessions = localStorage.getItem(this.ACTIVE_SESSIONS);
-    return sessions ? JSON.parse(sessions) : {};
-  }
-
   // Logout current user
   async logout(): Promise<void> {
     const currentUser = this.getCurrentUser();
@@ -261,18 +261,8 @@ export class UserManager {
       });
     }
     
-    localStorage.removeItem(this.CURRENT_USER_KEY);
-    
-    // Remove from active sessions
-    const activeSessions = this.getActiveSessions();
-    const sessionId = Object.keys(activeSessions).find(
-      id => activeSessions[id].username === currentUser?.username
-    );
-    
-    if (sessionId) {
-      delete activeSessions[sessionId];
-      localStorage.setItem(this.ACTIVE_SESSIONS, JSON.stringify(activeSessions));
-    }
+    // Remove session from sessionStorage
+    sessionStorage.removeItem(this.SESSION_KEY);
   }
 
   // Get user statistics
@@ -435,6 +425,35 @@ export class UserManager {
     } catch (err) {
       console.error('Error syncing with Supabase:', err);
     }
+  }
+
+  // Private methods
+  private generateSessionToken(): string {
+    return 'session_' + Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
+  }
+
+  private getSession(): { token: string; username: string; createdAt: string; expiresAt: string } | null {
+    const session = sessionStorage.getItem(this.SESSION_KEY);
+    return session ? JSON.parse(session) : null;
+  }
+
+  // Check if session is valid
+  isSessionValid(): boolean {
+    const session = this.getSession();
+    if (!session) return false;
+    
+    // Check if session is expired
+    return new Date(session.expiresAt) > new Date();
+  }
+
+  // Refresh session (extend expiry)
+  refreshSession(): void {
+    const session = this.getSession();
+    if (!session) return;
+    
+    session.expiresAt = new Date(Date.now() + this.SESSION_EXPIRY).toISOString();
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
   }
 }
 
