@@ -78,7 +78,7 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      const result = userManager.loginUser(username.trim());
+      const result = await userManager.loginUser(username.trim());
       
       if (result.success && result.user) {
         // Store compatibility data
@@ -158,7 +158,7 @@ const LoginPage: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url('/ChatGPT Image Jun 21, 2025, 04_01_07 PM copy copy.png')",
+        backgroundImage: "url('/images/background.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -180,7 +180,7 @@ const LoginPage: React.FC = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, type: "spring" }}
-            src="/ChatGPT Image Jun 21, 2025, 03_33_49 PM copy.png" 
+            src="/images/logo.png" 
             alt="Learn2Go Logo" 
             className="w-64 h-auto"
           />
